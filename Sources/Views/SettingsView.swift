@@ -81,7 +81,7 @@ public struct SettingsView: View {
                     .padding(10)
                     .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.06)))
 
-                    Text("Erforderliche Rechte: `issue` (Lese- & Schreibrechte)")
+                    Text("Erforderliche Gitea-Token Rechte:\n• `issue` (Lesen & Schreiben - für Zeitbuchung)\n• `repository` (Lesen - für Repository-Liste)\n• `user` (Lesen - für 'Mir zugewiesen' Filter)")
                         .font(.caption2)
                         .foregroundColor(.secondary)
                 }
