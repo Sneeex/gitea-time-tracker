@@ -1,0 +1,14 @@
+# Swift Build Outputs
+.build/
+build/
+
+# macOS files
+.DS_Store
+*.swp
+*.tmp
+
+# IDE / SwiftPM
+.swiftpm/
+.idea/
+*.xcodeproj
+*.xcworkspace
