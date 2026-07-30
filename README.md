@@ -1,64 +1,49 @@
-# ⏱️ Gitea Time Tracker (macOS Menu Bar App)
+# Gitea Time Tracker
 
-A native, lightweight, and modern **macOS Menu Bar Application** for effortless Gitea & Forgejo issue time tracking.
+A native macOS menu bar app for tracking time on Gitea and Forgejo issues.
 
-Built with **Swift 6 & SwiftUI**, designed to sit cleanly in your macOS Status Bar.
+## Features
 
----
+- **Menu bar timer**: Start, pause, and log time entries directly to Gitea issues.
+- **Time adjustments**: Click the timer to set time via steppers or quick duration presets (+15m, +30m, +1h, +2h).
+- **Issue & PR browser**: Search and filter issues assigned to you or across your repositories.
+- **Auto-detected repos**: Repo dropdown includes personal, organization, and assigned issue repositories.
+- **Favorites & recents**: Pin frequently used issues for quick access.
+- **AFK / Sleep detection**: Detects system sleep and inactivity with options to adjust logged time.
+- **Offline queue**: Automatically queues time entries when offline and syncs when reconnected.
+- **Encrypted credentials**: Stores your Personal Access Token encrypted locally using CryptoKit (AES-256-GCM).
+- **Autostart**: Optional launch-at-login setting via macOS ServiceManagement.
 
-## 🌟 Key Features
+## Required Gitea Token Scopes
 
-- **⏱️ Interactive Timer & Stepper**: Track time live or adjust hours/minutes via a modern popover stepper or quick preset duration chips (`+15m`, `+30m`, `+1h`, `+2h`).
-- **📌 Issue & Pull Request Selector**: Search, filter, and assign active issues or PRs directly from your Gitea repositories.
-- **🏷️ Smart Repository Dropdown**: Automatically detects assigned issues across all your personal and organization repositories.
-- **⭐ Favorites & Recents**: Pin your most frequently accessed issues for one-click access.
-- **🔌 Offline Resiliency & Queueing**: Erroneous or offline time logs are automatically queued locally and re-synced once back online.
-- **🌙 AFK & Sleep Detection**: Automatically detects Mac system sleep or user inactivity and prompts options to keep or deduct idle time.
-- **🔐 Hardware Encrypted Token Storage**: PAT Tokens are encrypted using Apple's `CryptoKit` AES-256-GCM framework – zero annoying keychain password popups.
-- **⚡ 1-Click Autostart**: Optional launch-at-login integration via macOS `ServiceManagement`.
+When creating a Personal Access Token in Gitea (**User Settings** > **Applications**), enable the following permissions:
 
----
+- `issue` (Read & Write) - Required for loading issues and logging time.
+- `repository` (Read) - Required for fetching the repository list.
+- `user` (Read) - Required for identifying your account in the assigned filter.
 
-## 🔐 Required Gitea API Token Permissions
-
-When creating a **Personal Access Token (PAT)** in your Gitea instance (`User Settings ➔ Applications ➔ Generate New Token`), ensure the following scopes are enabled:
-
-| Scope | Permission Level | Purpose |
-|---|---|---|
-| **`issue`** | **Read & Write** | Fetch assigned issues & post logged time entries (`POST /issues/{index}/times`) |
-| **`repository`** | **Read** | List available repositories in the repository selector dropdown |
-| **`user`** | **Read** | Retrieve authenticated username for the `@assigned` filter |
-
----
-
-## 🛠️ Build & Installation
+## Building from Source
 
 ### Requirements
 - macOS 14.0 (Sonoma) or newer
-- Xcode 15+ or Swift 6 Command Line Tools (for building from source)
-
-### Building from Source
+- Swift 6 / Xcode 15+
 
 ```bash
-# Clone the repository
 git clone https://github.com/Sneeex/gitea-time-tracker.git
 cd gitea-time-tracker
 
-# Build debug executable
+# Build debug
 swift build
 
-# Build production release executable
+# Build release
 swift build -c release
 ```
 
-### Running Locally
-
+To run locally:
 ```bash
 swift run GiteaTimeTracker
 ```
 
----
+## License
 
-## 📄 License
-
-Distributed under the MIT License.
+MIT
