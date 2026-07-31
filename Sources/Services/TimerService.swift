@@ -15,13 +15,14 @@ public final class TimerService: ObservableObject {
     @Published public private(set) var state: TimerState = .stopped
     @Published public var activeIssue: GiteaIssue?
     @Published public private(set) var elapsedSeconds: Int = 0
-    @Published public var statusMessage: String?
+    @Published public private(set) var statusMessage: String?
     @Published public var isSubmitting: Bool = false
 
     @Published public private(set) var recentIssues: [GiteaIssue] = []
     @Published public private(set) var favoriteIssueIDs: Set<Int> = []
 
     private var timer: Timer?
+    private var statusMessageTask: Task<Void, Never>?
     private let recentIssuesKey = "gitea_recent_issues"
     private let favoriteIssuesKey = "gitea_favorite_issue_ids"
 
@@ -29,10 +30,30 @@ public final class TimerService: ObservableObject {
         loadSavedPreferences()
     }
 
+    // MARK: - Status Message Handling (Auto-clears after duration)
+    public func setStatusMessage(_ message: String?, autoClearSeconds: Double = 4.0) {
+        statusMessageTask?.cancel()
+        self.statusMessage = message
+
+        if message != nil {
+            statusMessageTask = Task { @MainActor in
+                try? await Task.sleep(nanoseconds: UInt64(autoClearSeconds * 1_000_000_000))
+                if !Task.isCancelled {
+                    self.statusMessage = nil
+                }
+            }
+        }
+    }
+
     // MARK: - Timer Control
     public func start(issue: GiteaIssue) {
+        // If resuming the same issue while paused, resume instead of resetting elapsedSeconds
+        if activeIssue?.id == issue.id && state == .paused {
+            resume()
+            return
+        }
+
         if activeIssue?.id != issue.id && state != .stopped {
-            // Stop previous timer before starting new one
             stop()
         }
 
@@ -84,7 +105,7 @@ public final class TimerService: ObservableObject {
         }
 
         isSubmitting = true
-        statusMessage = "Buche \(SmartTimeParser.formatHumanReadable(elapsedSeconds)) zu \(issue.formattedKey)..."
+        setStatusMessage("Buche \(SmartTimeParser.formatHumanReadable(elapsedSeconds)) zu \(issue.formattedKey)...", autoClearSeconds: 10.0)
 
         let owner = issue.repoOwnerName
         let repo = issue.repoName
@@ -98,7 +119,7 @@ public final class TimerService: ObservableObject {
                 index: index,
                 seconds: secondsToLog
             )
-            statusMessage = "Erfolgreich \(SmartTimeParser.formatHumanReadable(secondsToLog)) verbucht!"
+            setStatusMessage("Erfolgreich \(SmartTimeParser.formatHumanReadable(secondsToLog)) verbucht!", autoClearSeconds: 4.0)
             stop()
         } catch {
             print("Direct log failed, queueing offline: \(error.localizedDescription)")
@@ -109,7 +130,7 @@ public final class TimerService: ObservableObject {
                 title: issue.title,
                 seconds: secondsToLog
             )
-            statusMessage = "Offline gespeichert. Wird synchronisiert, sobald Gitea erreichbar ist."
+            setStatusMessage("Offline gespeichert. Wird synchronisiert, sobald Gitea erreichbar ist.", autoClearSeconds: 5.0)
             stop()
         }
 
@@ -120,7 +141,7 @@ public final class TimerService: ObservableObject {
         guard seconds > 0 else { return false }
 
         isSubmitting = true
-        statusMessage = "Buche \(SmartTimeParser.formatHumanReadable(seconds)) zu \(issue.formattedKey)..."
+        setStatusMessage("Buche \(SmartTimeParser.formatHumanReadable(seconds)) zu \(issue.formattedKey)...", autoClearSeconds: 10.0)
 
         let owner = issue.repoOwnerName
         let repo = issue.repoName
@@ -135,7 +156,7 @@ public final class TimerService: ObservableObject {
                 index: index,
                 seconds: seconds
             )
-            statusMessage = "Manuell \(SmartTimeParser.formatHumanReadable(seconds)) verbucht!"
+            setStatusMessage("Manuell \(SmartTimeParser.formatHumanReadable(seconds)) verbucht!", autoClearSeconds: 4.0)
             isSubmitting = false
             return true
         } catch {
@@ -146,7 +167,7 @@ public final class TimerService: ObservableObject {
                 title: issue.title,
                 seconds: seconds
             )
-            statusMessage = "Manuelle Zeit offline in Warteschlange gespeichert."
+            setStatusMessage("Manuelle Zeit offline in Warteschlange gespeichert.", autoClearSeconds: 5.0)
             isSubmitting = false
             return true
         }

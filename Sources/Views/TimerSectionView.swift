@@ -156,7 +156,11 @@ public struct TimerSectionView: View {
                         .buttonStyle(.plain)
                     } else {
                         Button {
-                            timerService.start(issue: issue)
+                            if timerService.state == .paused {
+                                timerService.resume()
+                            } else {
+                                timerService.start(issue: issue)
+                            }
                         } label: {
                             Label(timerService.state == .paused ? "Weiter" : "Start", systemImage: "play.fill")
                                 .fontWeight(.bold)
