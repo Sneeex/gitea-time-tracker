@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 public enum NavigationTab: String, CaseIterable, Identifiable {
     case timer = "Stoppuhr"
