@@ -3,6 +3,7 @@ import ServiceManagement
 
 public struct SettingsView: View {
     @ObservedObject var syncManager = OfflineSyncManager.shared
+    @ObservedObject var updateChecker = UpdateChecker.shared
 
     @State private var serverURL: String = ""
     @State private var token: String = ""
@@ -162,6 +163,76 @@ public struct SettingsView: View {
                                 print("Autostart setting failed: \(error)")
                             }
                         }
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(RoundedRectangle(cornerRadius: 10).fill(Color.primary.opacity(0.04)))
+
+                Divider()
+                    .padding(.vertical, 4)
+
+                // MARK: - App Updates Section
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("App-Updates (GitHub)")
+                        .font(.caption)
+                        .fontWeight(.bold)
+                        .foregroundColor(.secondary)
+
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Installierte Version")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+                            Text("v\(updateChecker.currentVersion)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+
+                        Spacer()
+
+                        Button {
+                            Task {
+                                await updateChecker.checkForUpdates(isManualCheck: true)
+                            }
+                        } label: {
+                            HStack(spacing: 6) {
+                                if updateChecker.isChecking {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                } else {
+                                    Image(systemName: "arrow.clockwise")
+                                    Text("Nach Updates suchen")
+                                }
+                            }
+                        }
+                        .buttonStyle(.bordered)
+                        .disabled(updateChecker.isChecking)
+                    }
+
+                    Toggle("Beim Start automatisch nach Updates suchen", isOn: Binding(
+                        get: { updateChecker.isAutoCheckEnabled },
+                        set: { updateChecker.isAutoCheckEnabled = $0 }
+                    ))
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+
+                    if let msg = updateChecker.statusMessage {
+                        HStack(spacing: 6) {
+                            Image(systemName: updateChecker.isUpdateAvailable ? "sparkles" : "checkmark.circle.fill")
+                                .foregroundColor(updateChecker.isUpdateAvailable ? .blue : .green)
+                            Text(msg)
+                                .font(.caption2)
+                                .foregroundColor(updateChecker.isUpdateAvailable ? .blue : .secondary)
+                        }
+                    } else if let err = updateChecker.lastCheckError {
+                        HStack(spacing: 6) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundColor(.red)
+                            Text(err)
+                                .font(.caption2)
+                                .foregroundColor(.red)
+                        }
+                    }
                 }
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)

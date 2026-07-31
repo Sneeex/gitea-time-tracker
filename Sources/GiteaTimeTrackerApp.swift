@@ -6,6 +6,7 @@ struct GiteaTimeTrackerApp: App {
     @StateObject private var timerService = TimerService.shared
     @StateObject private var idleDetector = IdleDetector.shared
     @StateObject private var syncManager = OfflineSyncManager.shared
+    @StateObject private var updateChecker = UpdateChecker.shared
 
     @State private var isQuickSwitcherOpen: Bool = false
 
@@ -13,6 +14,9 @@ struct GiteaTimeTrackerApp: App {
         // MARK: - Menu Bar Extra App Scene
         MenuBarExtra {
             MenuBarView()
+                .onAppear {
+                    updateChecker.checkForUpdatesOnLaunch()
+                }
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: timerService.state == .running ? "timer" : "clock")

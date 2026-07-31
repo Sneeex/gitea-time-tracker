@@ -20,6 +20,7 @@ public enum NavigationTab: String, CaseIterable, Identifiable {
 public struct MenuBarView: View {
     @ObservedObject var timerService = TimerService.shared
     @ObservedObject var syncManager = OfflineSyncManager.shared
+    @ObservedObject var updateChecker = UpdateChecker.shared
 
     @State private var activeTab: NavigationTab = .timer
 
@@ -34,8 +35,18 @@ public struct MenuBarView: View {
                         activeTab = tab
                     } label: {
                         VStack(spacing: 4) {
-                            Image(systemName: tab.iconName)
-                                .font(.headline)
+                            ZStack(alignment: .topTrailing) {
+                                Image(systemName: tab.iconName)
+                                    .font(.headline)
+
+                                if tab == .settings && updateChecker.isUpdateAvailable {
+                                    Circle()
+                                        .fill(Color.blue)
+                                        .frame(width: 7, height: 7)
+                                        .offset(x: 6, y: -2)
+                                }
+                            }
+
                             Text(tab.rawValue)
                                 .font(.caption2)
                                 .fontWeight(.medium)
@@ -88,7 +99,22 @@ public struct MenuBarView: View {
 
                 Spacer()
 
-                if !syncManager.pendingEntries.isEmpty {
+                if updateChecker.isUpdateAvailable {
+                    Button {
+                        updateChecker.showUpdatePopup = true
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "sparkles")
+                                .foregroundColor(.blue)
+                            Text("Update v\(updateChecker.latestRelease?.cleanVersion ?? "")")
+                                .font(.caption2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.blue)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.trailing, 8)
+                } else if !syncManager.pendingEntries.isEmpty {
                     HStack(spacing: 4) {
                         Image(systemName: "icloud.and.arrow.up")
                             .foregroundColor(.orange)
@@ -117,5 +143,21 @@ public struct MenuBarView: View {
                 Rectangle().fill(.ultraThinMaterial)
             }
         )
+        .overlay {
+            if updateChecker.showUpdatePopup {
+                ZStack {
+                    Color.black.opacity(0.45)
+                        .ignoresSafeArea()
+
+                    UpdateDialogView()
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color(NSColor.windowBackgroundColor))
+                                .shadow(color: Color.black.opacity(0.35), radius: 14, x: 0, y: 6)
+                        )
+                        .padding(16)
+                }
+            }
+        }
     }
 }
