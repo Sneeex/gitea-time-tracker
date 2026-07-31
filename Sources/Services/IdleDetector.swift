@@ -36,6 +36,8 @@ public final class IdleDetector: ObservableObject {
     }
 
     private func checkSystemIdleTime() {
+        guard TimerService.shared.state == .running else { return }
+
         // CGEventSource.secondsSinceLastEventType gets seconds since mouse/keyboard movement
         let idleSeconds = Int(CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: .init(rawValue: ~0)!))
         let thresholdSecs = idleThresholdMinutes * 60
@@ -43,6 +45,7 @@ public final class IdleDetector: ObservableObject {
         if idleSeconds >= thresholdSecs && !isIdleDialogPresented {
             self.detectedIdleSeconds = idleSeconds
             self.isIdleDialogPresented = true
+            NSApp.activate(ignoringOtherApps: true)
         }
     }
 
@@ -64,10 +67,12 @@ public final class IdleDetector: ObservableObject {
         ) { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self = self else { return }
+                guard TimerService.shared.state == .running else { return }
                 let elapsed = Int(Date().timeIntervalSince(self.lastActiveDate))
                 if elapsed >= (self.idleThresholdMinutes * 60) && !self.isIdleDialogPresented {
                     self.detectedIdleSeconds = elapsed
                     self.isIdleDialogPresented = true
+                    NSApp.activate(ignoringOtherApps: true)
                 }
             }
         }

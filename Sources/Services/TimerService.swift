@@ -70,6 +70,7 @@ public final class TimerService: ObservableObject {
         guard activeIssue != nil, state == .paused else { return }
         self.state = .running
         startTimerTicker()
+        IdleDetector.shared.startMonitoring()
     }
 
     public func pause() {
@@ -77,6 +78,7 @@ public final class TimerService: ObservableObject {
         self.state = .paused
         timer?.invalidate()
         timer = nil
+        IdleDetector.shared.stopMonitoring()
     }
 
     public func stop() {
@@ -84,6 +86,7 @@ public final class TimerService: ObservableObject {
         self.timer?.invalidate()
         self.timer = nil
         self.elapsedSeconds = 0
+        IdleDetector.shared.stopMonitoring()
     }
 
     public func addSeconds(_ seconds: Int) {

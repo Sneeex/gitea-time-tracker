@@ -221,8 +221,21 @@ public struct TimerSectionView: View {
             Spacer(minLength: 0)
         }
         .padding(14)
-        .sheet(isPresented: $idleDetector.isIdleDialogPresented) {
-            IdleConfirmationView(idleSeconds: idleDetector.detectedIdleSeconds)
+        .overlay {
+            if idleDetector.isIdleDialogPresented {
+                ZStack {
+                    Color.black.opacity(0.45)
+                        .ignoresSafeArea()
+
+                    IdleConfirmationView(idleSeconds: idleDetector.detectedIdleSeconds)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color(NSColor.windowBackgroundColor))
+                                .shadow(color: Color.black.opacity(0.3), radius: 12, x: 0, y: 4)
+                        )
+                        .padding(16)
+                }
+            }
         }
     }
 }
@@ -357,7 +370,6 @@ struct TimeAdjusterPopoverView: View {
 // MARK: - AFK / Idle Dialog View
 struct IdleConfirmationView: View {
     let idleSeconds: Int
-    @Environment(\.dismiss) private var dismiss
     @ObservedObject var timerService = TimerService.shared
 
     var body: some View {
@@ -377,7 +389,6 @@ struct IdleConfirmationView: View {
             VStack(spacing: 10) {
                 Button {
                     IdleDetector.shared.isIdleDialogPresented = false
-                    dismiss()
                 } label: {
                     Text("Inaktive Zeit behalten (\(SmartTimeParser.formatHumanReadable(idleSeconds)))")
                         .frame(maxWidth: .infinity)
@@ -387,7 +398,6 @@ struct IdleConfirmationView: View {
                 Button {
                     timerService.deductIdleSeconds(idleSeconds)
                     IdleDetector.shared.isIdleDialogPresented = false
-                    dismiss()
                 } label: {
                     Text("Inaktive Zeit abziehen")
                         .frame(maxWidth: .infinity)
@@ -397,7 +407,6 @@ struct IdleConfirmationView: View {
                 Button(role: .destructive) {
                     timerService.stop()
                     IdleDetector.shared.isIdleDialogPresented = false
-                    dismiss()
                 } label: {
                     Text("Timer verwerfen")
                         .frame(maxWidth: .infinity)
@@ -405,6 +414,6 @@ struct IdleConfirmationView: View {
             }
         }
         .padding(20)
-        .frame(width: 320)
+        .frame(width: 300)
     }
 }
