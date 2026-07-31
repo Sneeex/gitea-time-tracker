@@ -1,0 +1,77 @@
+name: Build & Release App
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Release Binary
+        run: |
+          swift build -c release
+          mkdir -p build/GiteaTimeTracker.app/Contents/MacOS build/GiteaTimeTracker.app/Contents/Resources
+          cp .build/release/GiteaTimeTracker build/GiteaTimeTracker.app/Contents/MacOS/
+          
+          # Create Info.plist inside bundle
+          cat << 'EOF' > build/GiteaTimeTracker.app/Contents/Info.plist
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>CFBundleExecutable</key>
+              <string>GiteaTimeTracker</string>
+              <key>CFBundleIdentifier</key>
+              <string>com.antigravity.gitea-time-tracker</string>
+              <key>CFBundleName</key>
+              <string>Gitea Time Tracker</string>
+              <key>CFBundleDisplayName</key>
+              <string>Gitea Time Tracker</string>
+              <key>CFBundlePackageType</key>
+              <string>APPL</string>
+              <key>CFBundleShortVersionString</key>
+              <string>1.0.0</string>
+              <key>CFBundleVersion</key>
+              <string>1</string>
+              <key>LSMinimumSystemVersion</key>
+              <string>14.0</string>
+              <key>LSUIElement</key>
+              <true/>
+              <key>NSHighResolutionCapable</key>
+              <true/>
+          </dict>
+          </plist>
+          EOF
+
+          # Ad-hoc sign app bundle
+          codesign --force --deep --sign - build/GiteaTimeTracker.app
+          
+          # Create zip archive for release
+          cd build && zip -r GiteaTimeTracker.zip GiteaTimeTracker.app
+
+      - name: Create Release and Upload Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/GiteaTimeTracker.zip
+          name: Gitea Time Tracker ${{ github.ref_name }}
+          body: |
+            ## Gitea Time Tracker ${{ github.ref_name }}
+            
+            Download `GiteaTimeTracker.zip` below, unzip it, and move `GiteaTimeTracker.app` to your `/Applications` folder.
+            
+            ### First-time Launch Note (Gatekeeper)
+            If macOS displays a warning on first launch, open Terminal and run:
+            ```bash
+            xattr -cr /Applications/GiteaTimeTracker.app
+            ```
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
