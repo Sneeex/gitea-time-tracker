@@ -22,8 +22,12 @@ jobs:
           mkdir -p build/GiteaTimeTracker.app/Contents/MacOS build/GiteaTimeTracker.app/Contents/Resources
           cp .build/release/GiteaTimeTracker build/GiteaTimeTracker.app/Contents/MacOS/
           
+          # Extract clean version (e.g., "1.0.7" from tag "v1.0.7")
+          RAW_VERSION="${GITHUB_REF_NAME#v}"
+          VERSION="${RAW_VERSION:-1.0.7}"
+
           # Create Info.plist inside bundle
-          cat << 'EOF' > build/GiteaTimeTracker.app/Contents/Info.plist
+          cat << EOF > build/GiteaTimeTracker.app/Contents/Info.plist
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
@@ -39,7 +43,7 @@ jobs:
               <key>CFBundlePackageType</key>
               <string>APPL</string>
               <key>CFBundleShortVersionString</key>
-              <string>1.0.0</string>
+              <string>${VERSION}</string>
               <key>CFBundleVersion</key>
               <string>1</string>
               <key>LSMinimumSystemVersion</key>

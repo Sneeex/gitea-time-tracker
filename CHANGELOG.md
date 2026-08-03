@@ -2,6 +2,11 @@
 
 All notable changes to **Gitea Time Tracker** will be documented in this file.
 
+## [1.0.7] - 2026-08-03
+
+### 🐛 Fixed
+- **App Version Display**: Fixed GitHub Actions release workflow (`release.yml`) which was hardcoding `1.0.0` into `Info.plist`. Bundle version now dynamically matches the release tag.
+
 ## [1.0.6] - 2026-08-03
 
 ### ✨ Added
