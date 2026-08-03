@@ -2,6 +2,11 @@
 
 All notable changes to **Gitea Time Tracker** will be documented in this file.
 
+## [1.0.9] - 2026-08-03
+
+### 🎨 Style
+- **Simplified Release Title**: GitHub Releases are now named directly as `v1.0.X` instead of `Gitea Time Tracker v1.0.X`.
+
 ## [1.0.8] - 2026-08-03
 
 ### ✨ Improved
