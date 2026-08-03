@@ -62,20 +62,36 @@ jobs:
           # Create zip archive for release
           cd build && zip -r GiteaTimeTracker.zip GiteaTimeTracker.app
 
+      - name: Extract Release Notes from CHANGELOG.md
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          
+          # Extract section for this version from CHANGELOG.md
+          awk '/^## \['"${VERSION}"'\]/{flag=1; print; next} /^## \[/{flag=0} flag' CHANGELOG.md > release_notes.md
+          
+          # Fallback if section wasn't found
+          if [ ! -s release_notes.md ]; then
+            echo "## Gitea Time Tracker ${GITHUB_REF_NAME}" > release_notes.md
+          fi
+          
+          cat << 'EOF' >> release_notes.md
+
+---
+### Installation
+Download `GiteaTimeTracker.zip` below, unzip it, and move `GiteaTimeTracker.app` to your `/Applications` folder.
+
+**First-time Launch Note (Gatekeeper):**
+If macOS displays a warning on first launch, run:
+```bash
+xattr -cr /Applications/GiteaTimeTracker.app
+```
+EOF
+
       - name: Create Release and Upload Asset
         uses: softprops/action-gh-release@v2
         with:
           files: build/GiteaTimeTracker.zip
           name: Gitea Time Tracker ${{ github.ref_name }}
-          body: |
-            ## Gitea Time Tracker ${{ github.ref_name }}
-            
-            Download `GiteaTimeTracker.zip` below, unzip it, and move `GiteaTimeTracker.app` to your `/Applications` folder.
-            
-            ### First-time Launch Note (Gatekeeper)
-            If macOS displays a warning on first launch, open Terminal and run:
-            ```bash
-            xattr -cr /Applications/GiteaTimeTracker.app
-            ```
+          body_path: release_notes.md
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

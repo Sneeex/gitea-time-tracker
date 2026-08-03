@@ -2,6 +2,11 @@
 
 All notable changes to **Gitea Time Tracker** will be documented in this file.
 
+## [1.0.8] - 2026-08-03
+
+### ✨ Improved
+- **Automatic GitHub Release Notes**: GitHub Release workflow (`release.yml`) now automatically parses `CHANGELOG.md` for each release tag and embeds the full changelog directly in the GitHub Release notes forever.
+
 ## [1.0.7] - 2026-08-03
 
 ### 🐛 Fixed
