@@ -393,9 +393,13 @@ struct IssueCardView: View {
                 }
                 .buttonStyle(.plain)
 
-                // Select / Start Timer Button
+                // Select / Start Timer Button (or Dismiss if currently active)
                 Button {
-                    timerService.start(issue: issue)
+                    if isCurrentActive {
+                        timerService.dismissActiveIssue()
+                    } else {
+                        timerService.start(issue: issue)
+                    }
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: isCurrentActive ? "checkmark.circle.fill" : "play.fill")
@@ -412,7 +416,7 @@ struct IssueCardView: View {
                     )
                 }
                 .buttonStyle(.plain)
-                .disabled(isCurrentActive)
+                .help(isCurrentActive ? "Klicken zum Abwählen" : "Timer für dieses Issue starten")
             }
 
             // Title

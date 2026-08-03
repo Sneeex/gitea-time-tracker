@@ -46,6 +46,17 @@ public struct TimerSectionView: View {
                             .font(.body)
                     }
                     .buttonStyle(.plain)
+                    .help("Favorit umschalten")
+
+                    Button {
+                        timerService.dismissActiveIssue()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.secondary)
+                            .font(.body)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Issue/PR abwählen")
                 }
                 .padding(12)
                 .background(RoundedRectangle(cornerRadius: 10).fill(Color.primary.opacity(0.06)))

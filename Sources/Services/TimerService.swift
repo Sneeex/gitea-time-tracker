@@ -89,6 +89,11 @@ public final class TimerService: ObservableObject {
         IdleDetector.shared.stopMonitoring()
     }
 
+    public func dismissActiveIssue() {
+        stop()
+        self.activeIssue = nil
+    }
+
     public func addSeconds(_ seconds: Int) {
         self.elapsedSeconds = max(0, self.elapsedSeconds + seconds)
     }
