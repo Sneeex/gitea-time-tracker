@@ -2,6 +2,11 @@
 
 All notable changes to **Gitea Time Tracker** will be documented in this file.
 
+## [1.0.10] - 2026-08-03
+
+### ✨ Improved
+- **Full Changelog Comparison Link**: Release workflow now automatically computes the previous tag and embeds the direct GitHub comparison link (`**Full Changelog**: https://github.com/Sneeex/gitea-time-tracker/compare/PREV_TAG...NEW_TAG`) at the end of every release.
+
 ## [1.0.9] - 2026-08-03
 
 ### 🎨 Style
