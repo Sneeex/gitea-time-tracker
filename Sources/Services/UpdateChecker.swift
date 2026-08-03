@@ -80,7 +80,7 @@ public final class UpdateChecker: ObservableObject {
     }
 
     public var currentVersion: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.5"
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.6"
     }
 
     private let repositoryOwner = "Sneeex"

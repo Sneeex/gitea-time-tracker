@@ -2,6 +2,11 @@
 
 All notable changes to **Gitea Time Tracker** will be documented in this file.
 
+## [1.0.6] - 2026-08-03
+
+### ✨ Added
+- **Dismiss Active Issue/PR**: Added ability to deselect/dismiss the currently active issue or PR from the Stoppuhr banner and from the Issues list.
+
 ## [1.0.5] - 2026-07-31
 
 ### ✨ Added
