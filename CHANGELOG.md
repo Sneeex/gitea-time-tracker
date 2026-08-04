@@ -4,10 +4,16 @@ All notable changes to **Gitea Time Tracker** will be documented in this file.
 
 ## [1.0.11] - 2026-08-05
 
+### ✨ Added
+- **Global Hotkey Command Palette**: Introduced system-wide global hotkey support (`GlobalHotkeyService`) to launch the Quick Switcher Command Palette instantly from anywhere on macOS.
+- **Spotlight-Style Quick Switcher Window**: Brand-new Spotlight-inspired floating command palette featuring instant fuzzy search across assigned Gitea Issues & PRs, keyboard navigation (`↑↓`, `Enter`, `Esc`), borderless transparent titlebar, and auto-centering on the active monitor.
+- **Automated Git Branch & Commit Matching**: Added `GitWatcherService` to monitor local git repository branches and automatically map active git branches/commit keys to corresponding Gitea Issues and Pull Requests.
+- **Local macOS Notification System**: Integrated `NotificationService` to deliver native macOS notifications for timer state changes, branch switches, and automated tracking alerts.
+- **Skeleton Shimmer Loading States**: Added smooth shimmer animated loading placeholders (`QuickSwitcherSkeletonView` and `IssuePickerSkeletonView`) for non-blocking UI during initial Gitea API fetches.
+
 ### 🎨 Style & UI
-- **Spotlight-Style Quick Switcher**: Removed traffic light window buttons, enabled borderless transparent titlebar, and auto-centered the Quick Switcher on the active monitor.
 - **Window Auto-Close on Focus Loss**: Quick Switcher window automatically closes when losing focus or clicking outside.
-- **Pixel-Perfect Footer Alignment**: Fixed horizontal padding and removed hidden shortcut button layout spacing so footer items ("↑↓ Navigieren", "Esc Schließen") align precisely with tile boundaries.
+- **Pixel-Perfect Alignment**: Adjusted horizontal padding to 12pt across headers, cards, and footers, and relocated hidden shortcut buttons to eliminate trailing spacing.
 
 ## [1.0.10] - 2026-08-03
 
