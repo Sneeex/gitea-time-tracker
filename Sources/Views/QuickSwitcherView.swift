@@ -485,7 +485,7 @@ struct QuickSwitcherSkeletonView: View {
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 4) {
-                ForEach(0..<4, id: \.self) { _ in
+                ForEach(0..<6, id: \.self) { _ in
                     HStack(spacing: 10) {
                         // Badge placeholder
                         Capsule()

@@ -517,7 +517,7 @@ struct IssuePickerSkeletonView: View {
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 8) {
-                ForEach(0..<3, id: \.self) { _ in
+                ForEach(0..<5, id: \.self) { _ in
                     VStack(alignment: .leading, spacing: 8) {
                         HStack(spacing: 8) {
                             Capsule()
