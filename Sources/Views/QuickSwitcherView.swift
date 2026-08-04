@@ -235,6 +235,7 @@ public struct QuickSwitcherView: View {
         }
         .onAppear {
             setupKeyMonitor()
+            configureWindowLevel()
         }
         .onDisappear {
             removeKeyMonitor()
@@ -284,6 +285,15 @@ public struct QuickSwitcherView: View {
         let selected = list[selectedIndex]
         timerService.start(issue: selected)
         closeWindow()
+    }
+
+    private func configureWindowLevel() {
+        DispatchQueue.main.async {
+            if let window = NSApp.keyWindow ?? NSApp.windows.first(where: { $0.identifier?.rawValue == "quick-switcher" || $0.title == "Gitea Quick Switcher" }) {
+                window.level = .floating
+                window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+            }
+        }
     }
 
     private func closeWindow() {

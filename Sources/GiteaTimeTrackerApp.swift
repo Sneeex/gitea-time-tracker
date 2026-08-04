@@ -26,6 +26,14 @@ struct GiteaTimeTrackerApp: App {
                         } else {
                             NSApp.activate(ignoringOtherApps: true)
                             openWindow(id: "quick-switcher")
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                                if let window = NSApp.windows.first(where: { $0.identifier?.rawValue == "quick-switcher" || $0.title == "Gitea Quick Switcher" }) {
+                                    window.level = .floating
+                                    window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+                                    window.center()
+                                    window.makeKeyAndOrderFront(nil)
+                                }
+                            }
                         }
                     }
                 }
