@@ -7,12 +7,13 @@ public struct QuickSwitcherView: View {
 
     @State private var searchText: String = ""
     @State private var issues: [GiteaIssue] = []
+    @State private var isLoading: Bool = true
     @State private var selectedIndex: Int = 0
 
     public init() {}
 
     private var filteredList: [GiteaIssue] {
-        let source: [GiteaIssue] = searchText.isEmpty ? (issues.isEmpty ? timerService.recentIssues : issues) : issues
+        let source: [GiteaIssue] = issues
 
         var result: [GiteaIssue] = []
         var seenIDs = Set<Int>()
@@ -170,7 +171,17 @@ public struct QuickSwitcherView: View {
 
             // MARK: - List of matching issues
             let list = filteredList
-            if list.isEmpty {
+            if isLoading && issues.isEmpty {
+                VStack(spacing: 12) {
+                    ProgressView()
+                        .controlSize(.regular)
+                    Text("Lade Issues von Gitea...")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding()
+            } else if list.isEmpty {
                 VStack(spacing: 12) {
                     if let suggestion = suggestedCorrection {
                         Image(systemName: "sparkles")
@@ -276,9 +287,11 @@ public struct QuickSwitcherView: View {
             removeKeyMonitor()
         }
         .task {
+            isLoading = issues.isEmpty
             if let fetched = try? await GiteaAPIService.shared.fetchAssignedIssues() {
                 self.issues = fetched
             }
+            isLoading = false
         }
     }
 
