@@ -271,8 +271,8 @@ public struct SettingsView: View {
                             .font(.caption2)
                             .foregroundColor(.secondary)
 
-                        // Notification Status Banner if not authorized
-                        if !notificationService.isAuthorized {
+                        // Notification Status Banner if explicitly denied in macOS settings
+                        if notificationService.isDenied {
                             HStack(spacing: 8) {
                                 Image(systemName: "exclamationmark.triangle.fill")
                                     .foregroundColor(.orange)

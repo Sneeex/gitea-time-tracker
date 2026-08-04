@@ -10,6 +10,8 @@ public final class NotificationService: NSObject, ObservableObject, UNUserNotifi
     public nonisolated static let actionStartTracking = "START_TRACKING_ACTION"
 
     @Published public private(set) var isAuthorized: Bool = false
+    @Published public private(set) var isDenied: Bool = false
+    @Published public private(set) var authorizationStatus: UNAuthorizationStatus = .notDetermined
 
     public var isAvailable: Bool {
         Bundle.main.bundleIdentifier != nil
@@ -29,10 +31,7 @@ public final class NotificationService: NSObject, ObservableObject, UNUserNotifi
         guard isAvailable else { return }
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
             Task { @MainActor in
-                self.isAuthorized = granted
-                if !granted {
-                    self.checkAuthorizationStatus()
-                }
+                self.checkAuthorizationStatus()
             }
         }
     }
@@ -41,7 +40,9 @@ public final class NotificationService: NSObject, ObservableObject, UNUserNotifi
         guard isAvailable else { return }
         UNUserNotificationCenter.current().getNotificationSettings { settings in
             Task { @MainActor in
-                self.isAuthorized = (settings.authorizationStatus == .authorized)
+                self.authorizationStatus = settings.authorizationStatus
+                self.isAuthorized = (settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional)
+                self.isDenied = (settings.authorizationStatus == .denied)
             }
         }
     }
