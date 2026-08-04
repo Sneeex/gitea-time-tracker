@@ -13,7 +13,7 @@ public struct QuickSwitcherView: View {
 
     private var filteredList: [GiteaIssue] {
         if searchText.isEmpty {
-            return timerService.recentIssues
+            return issues.isEmpty ? timerService.recentIssues : issues
         }
         let query = searchText.lowercased()
         return issues.filter {
