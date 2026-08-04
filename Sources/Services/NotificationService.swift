@@ -71,21 +71,29 @@ public final class NotificationService: NSObject, ObservableObject, UNUserNotifi
             print("TestNotification: Cannot send (no .app bundle identifier)")
             return
         }
-        let content = UNMutableNotificationContent()
-        content.title = "Test-Benachrichtigung"
-        content.subtitle = "Gitea Time Tracker"
-        content.body = "Benachrichtigungen funktionieren einwandfrei!"
-        content.sound = .default
 
-        let request = UNNotificationRequest(
-            identifier: "test_notification_\(Date().timeIntervalSince1970)",
-            content: content,
-            trigger: nil
-        )
-
-        UNUserNotificationCenter.current().add(request) { error in
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
             if let error = error {
-                print("Failed to deliver test notification: \(error.localizedDescription)")
+                print("Notification request error: \(error.localizedDescription)")
+            }
+
+            let content = UNMutableNotificationContent()
+            content.title = "Test-Benachrichtigung"
+            content.subtitle = "Gitea Time Tracker"
+            content.body = "Benachrichtigungen funktionieren einwandfrei!"
+            content.sound = .default
+
+            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.2, repeats: false)
+            let request = UNNotificationRequest(
+                identifier: "test_notification_\(Date().timeIntervalSince1970)",
+                content: content,
+                trigger: trigger
+            )
+
+            UNUserNotificationCenter.current().add(request) { error in
+                if let error = error {
+                    print("Failed to deliver test notification: \(error.localizedDescription)")
+                }
             }
         }
     }
@@ -106,10 +114,11 @@ public final class NotificationService: NSObject, ObservableObject, UNUserNotifi
             content.userInfo = ["issue_data": encoded]
         }
 
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.2, repeats: false)
         let request = UNNotificationRequest(
             identifier: "git_branch_\(issue.id)_\(Date().timeIntervalSince1970)",
             content: content,
-            trigger: nil
+            trigger: trigger
         )
 
         UNUserNotificationCenter.current().add(request) { error in
@@ -125,7 +134,7 @@ public final class NotificationService: NSObject, ObservableObject, UNUserNotifi
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
-        completionHandler([.banner, .sound])
+        completionHandler([.banner, .sound, .list, .badge])
     }
 
     public nonisolated func userNotificationCenter(
