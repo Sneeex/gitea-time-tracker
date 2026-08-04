@@ -11,14 +11,24 @@ public final class NotificationService: NSObject, ObservableObject, UNUserNotifi
 
     @Published public private(set) var isAuthorized: Bool = false
 
+    public var isAvailable: Bool {
+        Bundle.main.bundleIdentifier != nil
+    }
+
     private override init() {
         super.init()
-        UNUserNotificationCenter.current().delegate = self
-        setupNotificationCategories()
-        checkAuthorizationStatus()
+        if isAvailable {
+            UNUserNotificationCenter.current().delegate = self
+            setupNotificationCategories()
+            checkAuthorizationStatus()
+        }
     }
 
     public func requestAuthorization() {
+        guard isAvailable else {
+            print("NotificationService: UNUserNotificationCenter disabled (running outside .app bundle)")
+            return
+        }
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
             Task { @MainActor in
                 self.isAuthorized = granted
@@ -30,6 +40,7 @@ public final class NotificationService: NSObject, ObservableObject, UNUserNotifi
     }
 
     public func checkAuthorizationStatus() {
+        guard isAvailable else { return }
         UNUserNotificationCenter.current().getNotificationSettings { settings in
             Task { @MainActor in
                 self.isAuthorized = (settings.authorizationStatus == .authorized)
@@ -38,6 +49,7 @@ public final class NotificationService: NSObject, ObservableObject, UNUserNotifi
     }
 
     private func setupNotificationCategories() {
+        guard isAvailable else { return }
         let startAction = UNNotificationAction(
             identifier: Self.actionStartTracking,
             title: "▶ Zeiterfassung starten",
@@ -54,7 +66,35 @@ public final class NotificationService: NSObject, ObservableObject, UNUserNotifi
         UNUserNotificationCenter.current().setNotificationCategories([category])
     }
 
+    public func sendTestNotification() {
+        guard isAvailable else {
+            print("TestNotification: Cannot send (no .app bundle identifier)")
+            return
+        }
+        let content = UNMutableNotificationContent()
+        content.title = "Test-Benachrichtigung"
+        content.subtitle = "Gitea Time Tracker"
+        content.body = "Benachrichtigungen funktionieren einwandfrei!"
+        content.sound = .default
+
+        let request = UNNotificationRequest(
+            identifier: "test_notification_\(Date().timeIntervalSince1970)",
+            content: content,
+            trigger: nil
+        )
+
+        UNUserNotificationCenter.current().add(request) { error in
+            if let error = error {
+                print("Failed to deliver test notification: \(error.localizedDescription)")
+            }
+        }
+    }
+
     public func sendGitBranchNotification(issue: GiteaIssue, branchName: String) {
+        guard isAvailable else {
+            print("GitBranchNotification: Cannot send notification (no .app bundle identifier)")
+            return
+        }
         let content = UNMutableNotificationContent()
         content.title = "Git-Branch gewechselt"
         content.subtitle = "\(branchName) → \(issue.formattedKey)"

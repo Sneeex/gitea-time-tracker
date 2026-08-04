@@ -179,21 +179,36 @@ public struct SettingsView: View {
 
                     Divider()
 
-                    // Global Hotkey Toggle
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Toggle("Globaler Schnellzugriff (`⌥ ⇧ G`)", isOn: $globalHotkey.isEnabled)
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                            Text("Öffnet die Gitea Quick Switcher Konsole von überall in macOS.")
-                                .font(.caption2)
-                                .foregroundColor(.secondary)
+                    // Global Hotkey Toggle & Selection
+                    VStack(alignment: .leading, spacing: 6) {
+                        Toggle("Globaler Schnellzugriff", isOn: $globalHotkey.isEnabled)
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                        Text("Öffnet die Gitea Quick Switcher Konsole von überall in macOS.")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+
+                        if globalHotkey.isEnabled {
+                            HStack {
+                                Text("Tastaturkürzel wählen:")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Spacer()
+                                Picker("", selection: $globalHotkey.selectedPreset) {
+                                    ForEach(HotkeyPreset.allCases) { preset in
+                                        Text(preset.rawValue).tag(preset)
+                                    }
+                                }
+                                .labelsHidden()
+                                .pickerStyle(.menu)
+                            }
+                            .padding(.top, 2)
                         }
                     }
 
                     Divider()
 
-                    // Git Auto-Tracking
+                    // Git Auto-Tracking & Notifications
                     VStack(alignment: .leading, spacing: 8) {
                         Toggle("Git-Branch Wechsel automatisch erkennen", isOn: $gitWatcher.isEnabled)
                             .font(.subheadline)
@@ -202,6 +217,17 @@ public struct SettingsView: View {
                         Text("Erkennt Branch-Namen mit Issue-Nummer (z.B. `feature/#42-auth`) und bietet per Benachrichtigung 1-Click Zeiterfassung an.")
                             .font(.caption2)
                             .foregroundColor(.secondary)
+
+                        HStack {
+                            Button {
+                                NotificationService.shared.requestAuthorization()
+                                NotificationService.shared.sendTestNotification()
+                            } label: {
+                                Label("Test-Benachrichtigung senden", systemImage: "bell.badge")
+                                    .font(.caption)
+                            }
+                            .buttonStyle(.bordered)
+                        }
 
                         if gitWatcher.isEnabled {
                             VStack(alignment: .leading, spacing: 6) {

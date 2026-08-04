@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 public struct QuickSwitcherView: View {
     @ObservedObject var timerService = TimerService.shared
@@ -17,7 +18,8 @@ public struct QuickSwitcherView: View {
         let query = searchText.lowercased()
         return issues.filter {
             $0.title.lowercased().contains(query) ||
-            $0.formattedKey.lowercased().contains(query)
+            $0.formattedKey.lowercased().contains(query) ||
+            $0.repoName.lowercased().contains(query)
         }
     }
 
@@ -29,9 +31,12 @@ public struct QuickSwitcherView: View {
                     .font(.title3)
                     .foregroundColor(.blue)
 
-                TextField("Quick Switch: Issue suchen...", text: $searchText)
+                TextField("Quick Switch: Issue oder PR suchen...", text: $searchText)
                     .font(.title3)
                     .textFieldStyle(.plain)
+                    .onSubmit {
+                        selectCurrentIndex()
+                    }
 
                 if !searchText.isEmpty {
                     Button {
@@ -54,7 +59,7 @@ public struct QuickSwitcherView: View {
                     Image(systemName: "magnifyingglass")
                         .font(.largeTitle)
                         .foregroundColor(.secondary)
-                    Text("Keine passenden Issues")
+                    Text("Keine passenden Issues oder PRs")
                         .foregroundColor(.secondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -69,7 +74,7 @@ public struct QuickSwitcherView: View {
                                     isSelected: index == selectedIndex
                                 ) {
                                     timerService.start(issue: issue)
-                                    dismiss()
+                                    closeWindow()
                                 }
                                 .id(index)
                             }
@@ -81,7 +86,7 @@ public struct QuickSwitcherView: View {
 
             Divider()
 
-            // Footer hint
+            // Footer hint & hidden escape action
             HStack {
                 Text("⏎ Auswählen & Starten")
                     .font(.caption2)
@@ -90,18 +95,50 @@ public struct QuickSwitcherView: View {
                 Text("Esc Schließen")
                     .font(.caption2)
                     .foregroundColor(.secondary)
+
+                // Hidden Escape Button to catch Esc key press globally in window
+                Button("") {
+                    closeWindow()
+                }
+                .keyboardShortcut(.cancelAction)
+                .opacity(0)
+                .frame(width: 0, height: 0)
+
+                // Hidden Default Action for Return key
+                Button("") {
+                    selectCurrentIndex()
+                }
+                .keyboardShortcut(.defaultAction)
+                .opacity(0)
+                .frame(width: 0, height: 0)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
             .background(Color.primary.opacity(0.03))
         }
-        .frame(width: 480, height: 320)
+        .frame(width: 500, height: 340)
         .background(.ultraThinMaterial)
+        .onExitCommand {
+            closeWindow()
+        }
         .task {
             if let fetched = try? await GiteaAPIService.shared.fetchAssignedIssues() {
                 self.issues = fetched
             }
         }
+    }
+
+    private func selectCurrentIndex() {
+        let list = filteredList
+        guard !list.isEmpty, selectedIndex >= 0, selectedIndex < list.count else { return }
+        let selected = list[selectedIndex]
+        timerService.start(issue: selected)
+        closeWindow()
+    }
+
+    private func closeWindow() {
+        dismiss()
+        NSApp.keyWindow?.close()
     }
 }
 
@@ -112,29 +149,45 @@ struct QuickSwitcherRow: View {
 
     var body: some View {
         Button(action: onSelect) {
-            HStack(spacing: 12) {
-                Text(issue.formattedKey)
-                    .font(.caption)
-                    .fontWeight(.bold)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Capsule().fill(Color.blue.opacity(0.2)))
-                    .foregroundColor(.blue)
+            HStack(spacing: 10) {
+                // Issue vs PR Badge & Icon
+                HStack(spacing: 4) {
+                    Image(systemName: issue.isPullRequest ? "arrow.triangle.pull" : "exclamationmark.circle")
+                        .font(.caption)
+                    Text(issue.isPullRequest ? "PR \(issue.formattedKey)" : issue.formattedKey)
+                        .font(.caption)
+                        .fontWeight(.bold)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 3)
+                .background(
+                    Capsule()
+                        .fill(issue.isPullRequest ? Color.purple.opacity(0.2) : Color.blue.opacity(0.2))
+                )
+                .foregroundColor(issue.isPullRequest ? .purple : .blue)
 
-                Text(issue.title)
-                    .font(.body)
-                    .lineLimit(1)
+                // Title & Repo
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(issue.title)
+                        .font(.body)
+                        .lineLimit(1)
+                    if !issue.repoName.isEmpty && issue.repoName != "Unknown" {
+                        Text(issue.repoName)
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                }
 
                 Spacer()
 
                 Image(systemName: "play.circle.fill")
                     .font(.title3)
-                    .foregroundColor(.blue)
+                    .foregroundColor(issue.isPullRequest ? .purple : .blue)
             }
             .padding(10)
             .background(
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(isSelected ? Color.blue.opacity(0.15) : Color.primary.opacity(0.04))
+                    .fill(isSelected ? (issue.isPullRequest ? Color.purple.opacity(0.15) : Color.blue.opacity(0.15)) : Color.primary.opacity(0.04))
             )
         }
         .buttonStyle(.plain)

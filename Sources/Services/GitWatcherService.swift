@@ -67,14 +67,19 @@ public final class GitWatcherService: ObservableObject {
     public func checkBranchChanges() {
         guard isEnabled else { return }
 
-        for folderPath in watchedFolderPaths {
-            guard let currentBranch = getCurrentBranch(for: folderPath), !currentBranch.isEmpty else {
+        var allRepos: [String] = []
+        for rootPath in watchedFolderPaths {
+            allRepos.append(contentsOf: findAllGitRepos(in: rootPath))
+        }
+
+        for repoPath in allRepos {
+            guard let currentBranch = getCurrentBranch(for: repoPath), !currentBranch.isEmpty else {
                 continue
             }
 
-            let previousBranch = lastKnownBranches[folderPath]
+            let previousBranch = lastKnownBranches[repoPath]
             if currentBranch != previousBranch {
-                lastKnownBranches[folderPath] = currentBranch
+                lastKnownBranches[repoPath] = currentBranch
                 self.lastDetectedBranch = currentBranch
 
                 // Only process if branch actually changed (not on first run initialization if previous was nil)
@@ -83,6 +88,43 @@ public final class GitWatcherService: ObservableObject {
                 }
             }
         }
+    }
+
+    private func findAllGitRepos(in folderPath: String) -> [String] {
+        let fm = FileManager.default
+        let headPath = (folderPath as NSString).appendingPathComponent(".git/HEAD")
+        if fm.fileExists(atPath: headPath) {
+            return [folderPath]
+        }
+
+        var repos: [String] = []
+        guard let subdirs = try? fm.contentsOfDirectory(atPath: folderPath) else {
+            return repos
+        }
+
+        for sub in subdirs {
+            if sub.hasPrefix(".") { continue }
+            let subPath = (folderPath as NSString).appendingPathComponent(sub)
+            var isDir: ObjCBool = false
+            if fm.fileExists(atPath: subPath, isDirectory: &isDir), isDir.boolValue {
+                let subGitHead = (subPath as NSString).appendingPathComponent(".git/HEAD")
+                if fm.fileExists(atPath: subGitHead) {
+                    repos.append(subPath)
+                } else {
+                    if let subSubdirs = try? fm.contentsOfDirectory(atPath: subPath) {
+                        for subSub in subSubdirs {
+                            if subSub.hasPrefix(".") { continue }
+                            let subSubPath = (subPath as NSString).appendingPathComponent(subSub)
+                            let subSubGitHead = (subSubPath as NSString).appendingPathComponent(".git/HEAD")
+                            if fm.fileExists(atPath: subSubGitHead) {
+                                repos.append(subSubPath)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return repos
     }
 
     private func getCurrentBranch(for folderPath: String) -> String? {
@@ -96,7 +138,6 @@ public final class GitWatcherService: ObservableObject {
             if content.hasPrefix("ref: refs/heads/") {
                 return String(content.dropFirst("ref: refs/heads/".count))
             } else {
-                // Detached HEAD or commit hash
                 return nil
             }
         } catch {
