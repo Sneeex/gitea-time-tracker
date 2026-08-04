@@ -406,7 +406,7 @@ public struct SettingsView: View {
 
                     if let msg = updateChecker.statusMessage {
                         HStack(spacing: 6) {
-                            Image(systemName: updateChecker.isUpdateAvailable ? "sparkles" : "checkmark.circle.fill")
+                            Image(systemName: updateChecker.isUpdateAvailable ? "arrow.down.circle.fill" : "checkmark.circle.fill")
                                 .foregroundColor(updateChecker.isUpdateAvailable ? .blue : .green)
                             Text(msg)
                                 .font(.caption2)

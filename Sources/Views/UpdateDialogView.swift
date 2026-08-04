@@ -12,18 +12,12 @@ public struct UpdateDialogView: View {
             HStack(spacing: 12) {
                 ZStack {
                     Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [Color.blue, Color.purple],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                        .fill(Color.blue.opacity(0.15))
                         .frame(width: 44, height: 44)
 
-                    Image(systemName: "sparkles")
+                    Image(systemName: "arrow.down.app.fill")
                         .font(.title2)
-                        .foregroundColor(.white)
+                        .foregroundColor(.blue)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {

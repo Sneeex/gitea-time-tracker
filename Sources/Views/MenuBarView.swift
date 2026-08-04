@@ -104,7 +104,7 @@ public struct MenuBarView: View {
                         updateChecker.showUpdatePopup = true
                     } label: {
                         HStack(spacing: 4) {
-                            Image(systemName: "sparkles")
+                            Image(systemName: "arrow.down.circle.fill")
                                 .foregroundColor(.blue)
                             Text("Update v\(updateChecker.latestRelease?.cleanVersion ?? "")")
                                 .font(.caption2)

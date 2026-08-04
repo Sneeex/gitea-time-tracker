@@ -2,6 +2,11 @@
 
 All notable changes to **Gitea Time Tracker** will be documented in this file.
 
+## [1.0.13] - 2026-08-05
+
+### 🎨 Style & UI
+- **Native Update Badge Design**: Refined update badges and icons across the App, Menu Bar, and Settings to use clean native macOS system icons (`arrow.down.app.fill` & `arrow.down.circle.fill`) with subtle accent tinting.
+
 ## [1.0.12] - 2026-08-05
 
 ### ✨ Added
