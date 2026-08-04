@@ -4,6 +4,8 @@ import ServiceManagement
 public struct SettingsView: View {
     @ObservedObject var syncManager = OfflineSyncManager.shared
     @ObservedObject var updateChecker = UpdateChecker.shared
+    @ObservedObject var gitWatcher = GitWatcherService.shared
+    @ObservedObject var globalHotkey = GlobalHotkeyService.shared
 
     @State private var serverURL: String = ""
     @State private var token: String = ""
@@ -25,6 +27,17 @@ public struct SettingsView: View {
             return "https://\(trimmed)"
         }
         return trimmed
+    }
+
+    private func selectGitFolder() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.prompt = "Git-Ordner auswählen"
+        if panel.runModal() == .OK, let url = panel.url {
+            gitWatcher.addFolder(url.path)
+        }
     }
 
     public var body: some View {
@@ -142,9 +155,9 @@ public struct SettingsView: View {
                 Divider()
                     .padding(.vertical, 4)
 
-                // MARK: - Autostart Section
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("System-Integration")
+                // MARK: - Autostart & System-Integration Section
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("System-Integration & Kurzbefehle")
                         .font(.caption)
                         .fontWeight(.bold)
                         .foregroundColor(.secondary)
@@ -163,6 +176,78 @@ public struct SettingsView: View {
                                 print("Autostart setting failed: \(error)")
                             }
                         }
+
+                    Divider()
+
+                    // Global Hotkey Toggle
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Toggle("Globaler Schnellzugriff (`⌥ ⇧ G`)", isOn: $globalHotkey.isEnabled)
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                            Text("Öffnet die Gitea Quick Switcher Konsole von überall in macOS.")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+
+                    Divider()
+
+                    // Git Auto-Tracking
+                    VStack(alignment: .leading, spacing: 8) {
+                        Toggle("Git-Branch Wechsel automatisch erkennen", isOn: $gitWatcher.isEnabled)
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+
+                        Text("Erkennt Branch-Namen mit Issue-Nummer (z.B. `feature/#42-auth`) und bietet per Benachrichtigung 1-Click Zeiterfassung an.")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+
+                        if gitWatcher.isEnabled {
+                            VStack(alignment: .leading, spacing: 6) {
+                                HStack {
+                                    Text("Überwachte Git-Ordner (\(gitWatcher.watchedFolderPaths.count))")
+                                        .font(.caption)
+                                        .fontWeight(.semibold)
+                                    Spacer()
+                                    Button(action: selectGitFolder) {
+                                        Label("Ordner hinzufügen", systemImage: "folder.badge.plus")
+                                            .font(.caption)
+                                    }
+                                    .buttonStyle(.bordered)
+                                }
+
+                                if gitWatcher.watchedFolderPaths.isEmpty {
+                                    Text("Noch keine Ordner hinzugefügt.")
+                                        .font(.caption2)
+                                        .italic()
+                                        .foregroundColor(.secondary)
+                                } else {
+                                    ForEach(gitWatcher.watchedFolderPaths, id: \.self) { path in
+                                        HStack {
+                                            Image(systemName: "folder.fill")
+                                                .foregroundColor(.blue)
+                                            Text(path)
+                                                .font(.caption2)
+                                                .lineLimit(1)
+                                                .truncationMode(.middle)
+                                            Spacer()
+                                            Button {
+                                                gitWatcher.removeFolder(path)
+                                            } label: {
+                                                Image(systemName: "trash")
+                                                    .foregroundColor(.red)
+                                            }
+                                            .buttonStyle(.plain)
+                                        }
+                                        .padding(6)
+                                        .background(RoundedRectangle(cornerRadius: 6).fill(Color.primary.opacity(0.05)))
+                                    }
+                                }
+                            }
+                            .padding(.top, 4)
+                        }
+                    }
                 }
                 .padding(12)
                 .frame(maxWidth: .infinity, alignment: .leading)

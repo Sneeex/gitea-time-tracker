@@ -10,12 +10,19 @@ struct GiteaTimeTrackerApp: App {
 
     @State private var isQuickSwitcherOpen: Bool = false
 
+    @Environment(\.openWindow) private var openWindow
+
     var body: some Scene {
         // MARK: - Menu Bar Extra App Scene
         MenuBarExtra {
             MenuBarView()
                 .onAppear {
                     updateChecker.checkForUpdatesOnLaunch()
+                    NotificationService.shared.requestAuthorization()
+                    GlobalHotkeyService.shared.setup {
+                        NSApp.activate(ignoringOtherApps: true)
+                        openWindow(id: "quick-switcher")
+                    }
                 }
         } label: {
             HStack(spacing: 4) {
