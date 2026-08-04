@@ -250,6 +250,33 @@ public struct IssuePickerView: View {
                             ProgressView("Lade Issues von Gitea...")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
+                        } else if let suggestion = suggestedCorrection {
+                            Image(systemName: "sparkles")
+                                .font(.system(size: 32))
+                                .foregroundColor(.orange)
+
+                            Text("Keine exakten Treffer für „\(searchText)“")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+
+                            Button {
+                                searchText = suggestion
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Text("Meintest du vielleicht:")
+                                        .foregroundColor(.primary)
+                                    Text("„\(suggestion)“")
+                                        .fontWeight(.bold)
+                                        .foregroundColor(.blue)
+                                    Image(systemName: "arrow.forward.circle.fill")
+                                        .foregroundColor(.blue)
+                                }
+                                .font(.callout)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 8)
+                                .background(Capsule().fill(Color.blue.opacity(0.12)))
+                            }
+                            .buttonStyle(.plain)
                         } else {
                             Image(systemName: "tray")
                                 .font(.system(size: 30))
@@ -331,6 +358,55 @@ public struct IssuePickerView: View {
             self.errorMessage = error.localizedDescription
         }
         isLoading = false
+    }
+
+    private var suggestedCorrection: String? {
+        let query = searchText.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty, filteredIssues.isEmpty else { return nil }
+
+        var bestWord: String?
+        var minDistance = Int.max
+
+        for issue in issues {
+            let textToScan = "\(issue.title) \(issue.repoName) \(issue.formattedKey)"
+            let words = textToScan.components(separatedBy: CharacterSet.alphanumerics.inverted)
+                .filter { $0.count >= 3 }
+
+            for word in words {
+                let lowerWord = word.lowercased()
+                if lowerWord == query || lowerWord.contains(query) || query.contains(lowerWord) { continue }
+
+                let dist = levenshteinDistance(query, lowerWord)
+                let maxAllowedDist = query.count <= 4 ? 1 : (query.count <= 7 ? 2 : 3)
+
+                if dist <= maxAllowedDist && dist < minDistance {
+                    minDistance = dist
+                    bestWord = word
+                }
+            }
+        }
+        return bestWord
+    }
+
+    private func levenshteinDistance(_ s1: String, _ s2: String) -> Int {
+        let a = Array(s1)
+        let b = Array(s2)
+        var dist = Array(repeating: Array(repeating: 0, count: b.count + 1), count: a.count + 1)
+
+        for i in 0...a.count { dist[i][0] = i }
+        for j in 0...b.count { dist[0][j] = j }
+
+        for i in 1...a.count {
+            for j in 1...b.count {
+                let cost = a[i - 1] == b[j - 1] ? 0 : 1
+                dist[i][j] = min(
+                    dist[i - 1][j] + 1,
+                    dist[i][j - 1] + 1,
+                    dist[i - 1][j - 1] + cost
+                )
+            }
+        }
+        return dist[a.count][b.count]
     }
 }
 
