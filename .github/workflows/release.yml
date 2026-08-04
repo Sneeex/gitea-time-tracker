@@ -76,18 +76,16 @@ jobs:
             echo "## Gitea Time Tracker ${GITHUB_REF_NAME}" > release_notes.md
           fi
           
-          cat << 'EOF' >> release_notes.md
-
----
-### Installation
-Download `GiteaTimeTracker.zip` below, unzip it, and move `GiteaTimeTracker.app` to your `/Applications` folder.
-
-**First-time Launch Note (Gatekeeper):**
-If macOS displays a warning on first launch, run:
-```bash
-xattr -cr /Applications/GiteaTimeTracker.app
-```
-EOF
+          echo "" >> release_notes.md
+          echo "---" >> release_notes.md
+          echo "### Installation" >> release_notes.md
+          echo "Download \`GiteaTimeTracker.zip\` below, unzip it, and move \`GiteaTimeTracker.app\` to your \`/Applications\` folder." >> release_notes.md
+          echo "" >> release_notes.md
+          echo "**First-time Launch Note (Gatekeeper):**" >> release_notes.md
+          echo "If macOS displays a warning on first launch, run:" >> release_notes.md
+          echo "\`\`\`bash" >> release_notes.md
+          echo "xattr -cr /Applications/GiteaTimeTracker.app" >> release_notes.md
+          echo "\`\`\`" >> release_notes.md
 
           PREV_TAG=$(git describe --tags --abbrev=0 "${GITHUB_REF_NAME}^" 2>/dev/null || true)
           if [ -n "$PREV_TAG" ]; then
