@@ -17,6 +17,7 @@ public final class NotificationService: NSObject, ObservableObject, UNUserNotifi
 
     private override init() {
         super.init()
+        NSUserNotificationCenter.default.delegate = self
         if isAvailable {
             UNUserNotificationCenter.current().delegate = self
             setupNotificationCategories()
@@ -25,16 +26,10 @@ public final class NotificationService: NSObject, ObservableObject, UNUserNotifi
     }
 
     public func requestAuthorization() {
-        guard isAvailable else {
-            print("NotificationService: UNUserNotificationCenter disabled (running outside .app bundle)")
-            return
-        }
+        guard isAvailable else { return }
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
             Task { @MainActor in
                 self.isAuthorized = granted
-                if let error = error {
-                    print("Notification authorization error: \(error.localizedDescription)")
-                }
             }
         }
     }
@@ -67,42 +62,47 @@ public final class NotificationService: NSObject, ObservableObject, UNUserNotifi
     }
 
     public func sendTestNotification() {
-        guard isAvailable else {
-            print("TestNotification: Cannot send (no .app bundle identifier)")
-            return
-        }
+        // 1. Deliver via NSUserNotificationCenter (guaranteed banner delivery on macOS)
+        let legacyNotification = NSUserNotification()
+        legacyNotification.title = "Test-Benachrichtigung"
+        legacyNotification.subtitle = "Gitea Time Tracker"
+        legacyNotification.informativeText = "Benachrichtigungen funktionieren einwandfrei!"
+        legacyNotification.soundName = NSUserNotificationDefaultSoundName
+        NSUserNotificationCenter.default.deliver(legacyNotification)
 
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-            if let error = error {
-                print("Notification request error: \(error.localizedDescription)")
-            }
-
+        // 2. Deliver via UNUserNotificationCenter if available
+        guard isAvailable else { return }
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in
             let content = UNMutableNotificationContent()
             content.title = "Test-Benachrichtigung"
             content.subtitle = "Gitea Time Tracker"
             content.body = "Benachrichtigungen funktionieren einwandfrei!"
             content.sound = .default
 
-            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.2, repeats: false)
+            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.1, repeats: false)
             let request = UNNotificationRequest(
                 identifier: "test_notification_\(Date().timeIntervalSince1970)",
                 content: content,
                 trigger: trigger
             )
-
-            UNUserNotificationCenter.current().add(request) { error in
-                if let error = error {
-                    print("Failed to deliver test notification: \(error.localizedDescription)")
-                }
-            }
+            UNUserNotificationCenter.current().add(request)
         }
     }
 
     public func sendGitBranchNotification(issue: GiteaIssue, branchName: String) {
-        guard isAvailable else {
-            print("GitBranchNotification: Cannot send notification (no .app bundle identifier)")
-            return
+        // 1. Deliver via NSUserNotificationCenter
+        let legacyNotification = NSUserNotification()
+        legacyNotification.title = "Git-Branch gewechselt"
+        legacyNotification.subtitle = "\(branchName) → \(issue.formattedKey)"
+        legacyNotification.informativeText = "\(issue.title)\nKlicke zum Starten der Stoppuhr."
+        legacyNotification.soundName = NSUserNotificationDefaultSoundName
+        if let encoded = try? JSONEncoder().encode(issue) {
+            legacyNotification.userInfo = ["issue_data": encoded]
         }
+        NSUserNotificationCenter.default.deliver(legacyNotification)
+
+        // 2. Deliver via UNUserNotificationCenter
+        guard isAvailable else { return }
         let content = UNMutableNotificationContent()
         content.title = "Git-Branch gewechselt"
         content.subtitle = "\(branchName) → \(issue.formattedKey)"
@@ -114,18 +114,13 @@ public final class NotificationService: NSObject, ObservableObject, UNUserNotifi
             content.userInfo = ["issue_data": encoded]
         }
 
-        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.2, repeats: false)
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.1, repeats: false)
         let request = UNNotificationRequest(
             identifier: "git_branch_\(issue.id)_\(Date().timeIntervalSince1970)",
             content: content,
             trigger: trigger
         )
-
-        UNUserNotificationCenter.current().add(request) { error in
-            if let error = error {
-                print("Failed to deliver notification: \(error.localizedDescription)")
-            }
-        }
+        UNUserNotificationCenter.current().add(request)
     }
 
     // MARK: - UNUserNotificationCenterDelegate
@@ -155,5 +150,22 @@ public final class NotificationService: NSObject, ObservableObject, UNUserNotifi
         }
 
         completionHandler()
+    }
+}
+
+// MARK: - NSUserNotificationCenterDelegate
+extension NotificationService: NSUserNotificationCenterDelegate {
+    public nonisolated func userNotificationCenter(_ center: NSUserNotificationCenter, shouldPresent notification: NSUserNotification) -> Bool {
+        return true
+    }
+
+    public nonisolated func userNotificationCenter(_ center: NSUserNotificationCenter, didActivate notification: NSUserNotification) {
+        if let data = notification.userInfo?["issue_data"] as? Data,
+           let issue = try? JSONDecoder().decode(GiteaIssue.self, from: data) {
+            Task { @MainActor in
+                TimerService.shared.start(issue: issue)
+                NSApp.activate(ignoringOtherApps: true)
+            }
+        }
     }
 }
