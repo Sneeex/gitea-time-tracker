@@ -229,10 +229,15 @@ public struct QuickSwitcherView: View {
             Divider()
 
             // MARK: - Footer hint & Keyboard navigation shortcuts
-            HStack {
-                Text("↑↓ Navigieren  •  ⏎ Starten")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
+            HStack(alignment: .center) {
+                HStack(spacing: 8) {
+                    Text("↑↓ Navigieren")
+                    Text("•")
+                        .opacity(0.5)
+                    Text("⏎ Starten")
+                }
+                .font(.caption2)
+                .foregroundColor(.secondary)
 
                 Spacer()
 
@@ -250,8 +255,8 @@ public struct QuickSwitcherView: View {
                 .hidden()
                 .frame(width: 0, height: 0)
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 10)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
             .background(Color.primary.opacity(0.03))
         }
         .frame(width: 520, height: timerService.activeIssue != nil ? 440 : 360)
