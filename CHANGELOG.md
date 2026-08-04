@@ -2,6 +2,13 @@
 
 All notable changes to **Gitea Time Tracker** will be documented in this file.
 
+## [1.0.11] - 2026-08-05
+
+### 🎨 Style & UI
+- **Spotlight-Style Quick Switcher**: Removed traffic light window buttons, enabled borderless transparent titlebar, and auto-centered the Quick Switcher on the active monitor.
+- **Window Auto-Close on Focus Loss**: Quick Switcher window automatically closes when losing focus or clicking outside.
+- **Pixel-Perfect Footer Alignment**: Fixed horizontal padding and removed hidden shortcut button layout spacing so footer items ("↑↓ Navigieren", "Esc Schließen") align precisely with tile boundaries.
+
 ## [1.0.10] - 2026-08-03
 
 ### ✨ Improved
