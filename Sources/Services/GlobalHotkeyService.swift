@@ -39,6 +39,9 @@ public final class GlobalHotkeyService: ObservableObject {
 
     private init() {
         loadPreferences()
+        if isEnabled {
+            registerHotkey()
+        }
     }
 
     public func setup(onTrigger: @escaping () -> Void) {
