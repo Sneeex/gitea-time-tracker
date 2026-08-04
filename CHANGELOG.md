@@ -2,7 +2,7 @@
 
 All notable changes to **Gitea Time Tracker** will be documented in this file.
 
-## [1.0.11] - 2026-08-05
+## [1.0.12] - 2026-08-05
 
 ### ✨ Added
 - **Global Hotkey Command Palette**: Introduced system-wide global hotkey support (`GlobalHotkeyService`) to launch the Quick Switcher Command Palette instantly from anywhere on macOS.
