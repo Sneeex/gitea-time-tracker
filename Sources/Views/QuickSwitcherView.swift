@@ -212,29 +212,25 @@ public struct QuickSwitcherView: View {
                 Text("↑↓ Navigieren  •  ⏎ Starten")
                     .font(.caption2)
                     .foregroundColor(.secondary)
+
                 Spacer()
+
                 Text("Esc Schließen")
                     .font(.caption2)
                     .foregroundColor(.secondary)
 
-                // Hidden Escape Button to catch Esc key press globally in window
-                Button("") {
-                    closeWindow()
+                // Hidden Escape & Return Key Shortcuts
+                Group {
+                    Button("") { closeWindow() }
+                        .keyboardShortcut(.cancelAction)
+                    Button("") { selectCurrentIndex() }
+                        .keyboardShortcut(.defaultAction)
                 }
-                .keyboardShortcut(.cancelAction)
-                .opacity(0)
-                .frame(width: 0, height: 0)
-
-                // Hidden Default Action for Return key
-                Button("") {
-                    selectCurrentIndex()
-                }
-                .keyboardShortcut(.defaultAction)
-                .opacity(0)
+                .hidden()
                 .frame(width: 0, height: 0)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
+            .padding(.horizontal, 20)
+            .padding(.vertical, 10)
             .background(Color.primary.opacity(0.03))
         }
         .frame(width: 520, height: timerService.activeIssue != nil ? 440 : 360)
