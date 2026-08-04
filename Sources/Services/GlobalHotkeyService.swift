@@ -113,10 +113,10 @@ public final class GlobalHotkeyService: ObservableObject {
             return noErr
         }
 
-        InstallEventHandler(GetApplicationEventTarget(), handlerBlock, 1, &eventType, nil, &eventHandlerRef)
+        InstallEventHandler(GetEventDispatcherTarget(), handlerBlock, 1, &eventType, nil, &eventHandlerRef)
 
         let hotKeyID = EventHotKeyID(signature: OSType(1195725652), id: 1)
-        RegisterEventHotKey(keyCode, carbonModifiers, hotKeyID, GetApplicationEventTarget(), 0, &hotKeyRef)
+        RegisterEventHotKey(keyCode, carbonModifiers, hotKeyID, GetEventDispatcherTarget(), 0, &hotKeyRef)
     }
 
     public func unregisterHotkey() {
