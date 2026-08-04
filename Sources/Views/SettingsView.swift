@@ -181,7 +181,7 @@ public struct SettingsView: View {
 
                     Divider()
 
-                    // Global Hotkey Toggle & Selection
+                    // Global Hotkey Toggle & Custom Recorder
                     VStack(alignment: .leading, spacing: 6) {
                         Toggle("Globaler Schnellzugriff", isOn: $globalHotkey.isEnabled)
                             .font(.subheadline)
@@ -192,17 +192,44 @@ public struct SettingsView: View {
 
                         if globalHotkey.isEnabled {
                             HStack {
-                                Text("Tastaturkürzel wählen:")
+                                Text("Tastaturkürzel:")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                                 Spacer()
-                                Picker("", selection: $globalHotkey.selectedPreset) {
-                                    ForEach(HotkeyPreset.allCases) { preset in
-                                        Text(preset.rawValue).tag(preset)
+
+                                Button {
+                                    if globalHotkey.isRecording {
+                                        globalHotkey.stopRecording()
+                                    } else {
+                                        globalHotkey.startRecording()
                                     }
+                                } label: {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: globalHotkey.isRecording ? "record.circle.fill" : "keyboard")
+                                            .foregroundColor(globalHotkey.isRecording ? .red : .blue)
+                                        Text(globalHotkey.isRecording ? "Taste drücken..." : globalHotkey.displayString)
+                                            .fontWeight(.bold)
+                                    }
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 4)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 6)
+                                            .fill(globalHotkey.isRecording ? Color.red.opacity(0.15) : Color.blue.opacity(0.12))
+                                    )
                                 }
-                                .labelsHidden()
-                                .pickerStyle(.menu)
+                                .buttonStyle(.plain)
+
+                                if globalHotkey.displayString != GlobalHotkeyService.defaultDisplayString {
+                                    Button {
+                                        globalHotkey.resetToDefault()
+                                    } label: {
+                                        Image(systemName: "arrow.counterclockwise")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .help("Auf Standard (⌥ ⇧ G) zurücksetzen")
+                                }
                             }
                             .padding(.top, 2)
                         }
