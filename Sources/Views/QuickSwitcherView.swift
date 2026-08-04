@@ -172,15 +172,8 @@ public struct QuickSwitcherView: View {
             // MARK: - List of matching issues
             let list = filteredList
             if isLoading && issues.isEmpty {
-                VStack(spacing: 12) {
-                    ProgressView()
-                        .controlSize(.regular)
-                    Text("Lade Issues von Gitea...")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding()
+                QuickSwitcherSkeletonView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if list.isEmpty {
                 VStack(spacing: 12) {
                     if let suggestion = suggestedCorrection {
@@ -449,5 +442,82 @@ struct QuickSwitcherRow: View {
             )
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Skeleton Shimmer Components
+struct ShimmerModifier: ViewModifier {
+    @State private var phase: CGFloat = -0.6
+
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                GeometryReader { geo in
+                    LinearGradient(
+                        colors: [
+                            Color.white.opacity(0.0),
+                            Color.white.opacity(0.18),
+                            Color.white.opacity(0.0)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                    .frame(width: geo.size.width * 2)
+                    .offset(x: geo.size.width * phase)
+                }
+                .mask(content)
+            )
+            .onAppear {
+                withAnimation(.linear(duration: 1.4).repeatForever(autoreverses: false)) {
+                    phase = 1.2
+                }
+            }
+    }
+}
+
+extension View {
+    func shimmering() -> some View {
+        modifier(ShimmerModifier())
+    }
+}
+
+struct QuickSwitcherSkeletonView: View {
+    var body: some View {
+        VStack(spacing: 4) {
+            ForEach(0..<4, id: \.self) { _ in
+                HStack(spacing: 10) {
+                    // Badge placeholder
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.primary.opacity(0.08))
+                        .frame(width: 54, height: 20)
+
+                    // Title & Subtitle placeholders
+                    VStack(alignment: .leading, spacing: 6) {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.primary.opacity(0.1))
+                            .frame(height: 14)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.primary.opacity(0.06))
+                            .frame(width: 90, height: 10)
+                    }
+
+                    Spacer()
+
+                    // Button placeholder
+                    Circle()
+                        .fill(Color.primary.opacity(0.08))
+                        .frame(width: 24, height: 24)
+                }
+                .padding(10)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.primary.opacity(0.03))
+                )
+            }
+        }
+        .padding(8)
+        .shimmering()
     }
 }

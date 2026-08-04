@@ -247,9 +247,7 @@ public struct IssuePickerView: View {
                     VStack(spacing: 8) {
                         Spacer()
                         if isLoading {
-                            ProgressView("Lade Issues von Gitea...")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                            IssuePickerSkeletonView()
                         } else if let suggestion = suggestedCorrection {
                             Image(systemName: "sparkles")
                                 .font(.system(size: 32))
@@ -512,5 +510,48 @@ struct IssueCardView: View {
                         .stroke(isCurrentActive ? Color.green.opacity(0.4) : Color.primary.opacity(0.06), lineWidth: 1)
                 )
         )
+    }
+}
+
+struct IssuePickerSkeletonView: View {
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 8) {
+                ForEach(0..<3, id: \.self) { _ in
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.primary.opacity(0.08))
+                                .frame(width: 60, height: 20)
+
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(Color.primary.opacity(0.06))
+                                .frame(width: 80, height: 12)
+
+                            Spacer()
+
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.primary.opacity(0.1))
+                                .frame(width: 60, height: 22)
+                        }
+
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.primary.opacity(0.1))
+                            .frame(height: 16)
+
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.primary.opacity(0.08))
+                            .frame(width: 200, height: 14)
+                    }
+                    .padding(12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(Color.primary.opacity(0.04))
+                    )
+                }
+            }
+            .padding(.vertical, 4)
+            .shimmering()
+        }
     }
 }
