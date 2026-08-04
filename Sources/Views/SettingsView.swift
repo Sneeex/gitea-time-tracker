@@ -22,7 +22,7 @@ public struct SettingsView: View {
 
     public var cleanedURLString: String {
         let trimmed = serverURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.isEmpty { return "https://codeberg.org" }
+        if trimmed.isEmpty { return "" }
         if !trimmed.lowercased().hasPrefix("http://") && !trimmed.lowercased().hasPrefix("https://") {
             return "https://\(trimmed)"
         }
@@ -68,8 +68,10 @@ public struct SettingsView: View {
                             .fontWeight(.bold)
                             .foregroundColor(.secondary)
                         Spacer()
-                        Link("Token in Gitea erstellen ↗", destination: URL(string: "\(cleanedURLString)/user/settings/applications") ?? URL(string: "https://codeberg.org")!)
-                            .font(.caption2)
+                        if !cleanedURLString.isEmpty, let tokenURL = URL(string: "\(cleanedURLString)/user/settings/applications") {
+                            Link("Token in Gitea erstellen ↗", destination: tokenURL)
+                                .font(.caption2)
+                        }
                     }
 
                     HStack {

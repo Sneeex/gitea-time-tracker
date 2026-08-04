@@ -16,7 +16,7 @@ public final class KeychainService: @unchecked Sendable {
     }
 
     public func getServerURL() -> String {
-        return UserDefaults.standard.string(forKey: "gitea_server_url") ?? "https://codeberg.org"
+        return UserDefaults.standard.string(forKey: "gitea_server_url") ?? ""
     }
 
     // MARK: - Encryption Key Helper
