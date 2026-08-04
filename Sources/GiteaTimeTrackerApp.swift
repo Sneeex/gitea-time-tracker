@@ -20,8 +20,13 @@ struct GiteaTimeTrackerApp: App {
                     updateChecker.checkForUpdatesOnLaunch()
                     NotificationService.shared.requestAuthorization()
                     GlobalHotkeyService.shared.setup {
-                        NSApp.activate(ignoringOtherApps: true)
-                        openWindow(id: "quick-switcher")
+                        if let window = NSApp.windows.first(where: { $0.identifier?.rawValue == "quick-switcher" || $0.title == "Gitea Quick Switcher" }),
+                           window.isVisible && window.isKeyWindow {
+                            window.close()
+                        } else {
+                            NSApp.activate(ignoringOtherApps: true)
+                            openWindow(id: "quick-switcher")
+                        }
                     }
                 }
         } label: {

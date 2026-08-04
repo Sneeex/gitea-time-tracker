@@ -25,7 +25,110 @@ public struct QuickSwitcherView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
-            // Search Input Header
+            // MARK: - Active Timer Header Controls (if active issue selected or timer running)
+            if let activeIssue = timerService.activeIssue {
+                VStack(spacing: 8) {
+                    HStack(spacing: 10) {
+                        // Issue/PR indicator & Title
+                        HStack(spacing: 4) {
+                            Image(systemName: activeIssue.isPullRequest ? "arrow.triangle.pull" : "exclamationmark.circle")
+                            Text(activeIssue.isPullRequest ? "PR \(activeIssue.formattedKey)" : activeIssue.formattedKey)
+                                .fontWeight(.bold)
+                        }
+                        .font(.caption)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(Capsule().fill(activeIssue.isPullRequest ? Color.purple.opacity(0.2) : Color.blue.opacity(0.2)))
+                        .foregroundColor(activeIssue.isPullRequest ? .purple : .blue)
+
+                        Text(activeIssue.title)
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .lineLimit(1)
+
+                        Spacer()
+
+                        // Monospace Timer Readout
+                        Text(SmartTimeParser.formatTimerString(timerService.elapsedSeconds))
+                            .font(.system(.title3, design: .monospaced, weight: .bold))
+                            .foregroundColor(timerService.state == .running ? .green : (timerService.state == .paused ? .orange : .primary))
+                    }
+
+                    // Action Controls Bar
+                    HStack(spacing: 8) {
+                        // Pause / Resume Button
+                        if timerService.state == .running {
+                            Button {
+                                timerService.pause()
+                            } label: {
+                                Label("Pause", systemImage: "pause.fill")
+                                    .font(.caption)
+                                    .fontWeight(.semibold)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.orange)
+                        } else {
+                            Button {
+                                if timerService.state == .paused {
+                                    timerService.resume()
+                                } else {
+                                    timerService.start(issue: activeIssue)
+                                }
+                            } label: {
+                                Label(timerService.state == .paused ? "Weiter" : "Start", systemImage: "play.fill")
+                                    .font(.caption)
+                                    .fontWeight(.semibold)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.green)
+                        }
+
+                        // Log Time Button
+                        Button {
+                            Task {
+                                await timerService.stopAndLogTime()
+                            }
+                        } label: {
+                            if timerService.isSubmitting {
+                                ProgressView().controlSize(.small)
+                            } else {
+                                Label("Buchen", systemImage: "arrow.up.circle.fill")
+                                    .font(.caption)
+                                    .fontWeight(.semibold)
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+                        .disabled(timerService.elapsedSeconds == 0 || timerService.isSubmitting)
+
+                        // Quick Add Chips
+                        Button("+15m") { timerService.addSeconds(15 * 60) }
+                            .buttonStyle(.bordered)
+                            .font(.caption2)
+                        Button("+30m") { timerService.addSeconds(30 * 60) }
+                            .buttonStyle(.bordered)
+                            .font(.caption2)
+
+                        Spacer()
+
+                        // Discard / Stop Button
+                        Button {
+                            timerService.stop()
+                        } label: {
+                            Image(systemName: "trash")
+                                .foregroundColor(.red)
+                        }
+                        .buttonStyle(.plain)
+                        .help("Timer abbrechen")
+                    }
+                }
+                .padding(12)
+                .background(Color.primary.opacity(0.06))
+
+                Divider()
+            }
+
+            // MARK: - Search Input Header
             HStack(spacing: 10) {
                 Image(systemName: "command")
                     .font(.title3)
@@ -36,6 +139,9 @@ public struct QuickSwitcherView: View {
                     .textFieldStyle(.plain)
                     .onSubmit {
                         selectCurrentIndex()
+                    }
+                    .onChange(of: searchText) { _, _ in
+                        selectedIndex = 0
                     }
 
                 if !searchText.isEmpty {
@@ -48,13 +154,14 @@ public struct QuickSwitcherView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .padding(14)
-            .background(Color.primary.opacity(0.04))
+            .padding(12)
+            .background(Color.primary.opacity(0.03))
 
             Divider()
 
-            // List of matching issues
-            if filteredList.isEmpty {
+            // MARK: - List of matching issues
+            let list = filteredList
+            if list.isEmpty {
                 VStack(spacing: 8) {
                     Image(systemName: "magnifyingglass")
                         .font(.largeTitle)
@@ -68,7 +175,7 @@ public struct QuickSwitcherView: View {
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(spacing: 4) {
-                            ForEach(Array(filteredList.enumerated()), id: \.element.id) { index, issue in
+                            ForEach(Array(list.enumerated()), id: \.element.id) { index, issue in
                                 QuickSwitcherRow(
                                     issue: issue,
                                     isSelected: index == selectedIndex
@@ -81,14 +188,19 @@ public struct QuickSwitcherView: View {
                         }
                         .padding(8)
                     }
+                    .onChange(of: selectedIndex) { _, newIndex in
+                        withAnimation {
+                            proxy.scrollTo(newIndex, anchor: .center)
+                        }
+                    }
                 }
             }
 
             Divider()
 
-            // Footer hint & hidden escape action
+            // MARK: - Footer hint & Keyboard navigation shortcuts
             HStack {
-                Text("⏎ Auswählen & Starten")
+                Text("↑↓ Navigieren  •  ⏎ Starten")
                     .font(.caption2)
                     .foregroundColor(.secondary)
                 Spacer()
@@ -116,7 +228,7 @@ public struct QuickSwitcherView: View {
             .padding(.vertical, 8)
             .background(Color.primary.opacity(0.03))
         }
-        .frame(width: 500, height: 340)
+        .frame(width: 520, height: timerService.activeIssue != nil ? 440 : 360)
         .background(.ultraThinMaterial)
         .onExitCommand {
             closeWindow()
@@ -187,7 +299,11 @@ struct QuickSwitcherRow: View {
             .padding(10)
             .background(
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(isSelected ? (issue.isPullRequest ? Color.purple.opacity(0.15) : Color.blue.opacity(0.15)) : Color.primary.opacity(0.04))
+                    .fill(isSelected ? (issue.isPullRequest ? Color.purple.opacity(0.18) : Color.blue.opacity(0.18)) : Color.primary.opacity(0.04))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(isSelected ? (issue.isPullRequest ? Color.purple.opacity(0.5) : Color.blue.opacity(0.5)) : Color.clear, lineWidth: 1.5)
             )
         }
         .buttonStyle(.plain)
