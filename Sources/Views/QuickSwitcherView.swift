@@ -12,15 +12,24 @@ public struct QuickSwitcherView: View {
     public init() {}
 
     private var filteredList: [GiteaIssue] {
-        if searchText.isEmpty {
-            return issues.isEmpty ? timerService.recentIssues : issues
+        let source: [GiteaIssue] = searchText.isEmpty ? (issues.isEmpty ? timerService.recentIssues : issues) : issues
+
+        var result: [GiteaIssue] = []
+        var seenIDs = Set<Int>()
+
+        let query = searchText.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        for item in source {
+            if !seenIDs.contains(item.id) {
+                if query.isEmpty ||
+                   item.title.lowercased().contains(query) ||
+                   item.formattedKey.lowercased().contains(query) ||
+                   item.repoName.lowercased().contains(query) {
+                    seenIDs.insert(item.id)
+                    result.append(item)
+                }
+            }
         }
-        let query = searchText.lowercased()
-        return issues.filter {
-            $0.title.lowercased().contains(query) ||
-            $0.formattedKey.lowercased().contains(query) ||
-            $0.repoName.lowercased().contains(query)
-        }
+        return result
     }
 
     public var body: some View {
@@ -175,7 +184,7 @@ public struct QuickSwitcherView: View {
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(spacing: 4) {
-                            ForEach(Array(list.enumerated()), id: \.element.id) { index, issue in
+                            ForEach(Array(list.enumerated()), id: \.offset) { index, issue in
                                 QuickSwitcherRow(
                                     issue: issue,
                                     isSelected: index == selectedIndex
@@ -189,7 +198,7 @@ public struct QuickSwitcherView: View {
                         .padding(8)
                     }
                     .onChange(of: selectedIndex) { _, newIndex in
-                        withAnimation {
+                        withAnimation(.easeInOut(duration: 0.1)) {
                             proxy.scrollTo(newIndex, anchor: .center)
                         }
                     }
@@ -234,6 +243,7 @@ public struct QuickSwitcherView: View {
             closeWindow()
         }
         .onAppear {
+            selectedIndex = 0
             setupKeyMonitor()
             configureWindowLevel()
         }
@@ -257,14 +267,10 @@ public struct QuickSwitcherView: View {
 
             switch Int(event.keyCode) {
             case 125: // Down Arrow
-                Task { @MainActor in
-                    self.selectedIndex = min(count - 1, self.selectedIndex + 1)
-                }
+                self.selectedIndex = min(count - 1, self.selectedIndex + 1)
                 return nil
             case 126: // Up Arrow
-                Task { @MainActor in
-                    self.selectedIndex = max(0, self.selectedIndex - 1)
-                }
+                self.selectedIndex = max(0, self.selectedIndex - 1)
                 return nil
             default:
                 return event
@@ -348,11 +354,11 @@ struct QuickSwitcherRow: View {
             .padding(10)
             .background(
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(isSelected ? (issue.isPullRequest ? Color.purple.opacity(0.18) : Color.blue.opacity(0.18)) : Color.primary.opacity(0.04))
+                    .fill(isSelected ? (issue.isPullRequest ? Color.purple.opacity(0.22) : Color.blue.opacity(0.22)) : Color.primary.opacity(0.04))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
-                    .stroke(isSelected ? (issue.isPullRequest ? Color.purple.opacity(0.5) : Color.blue.opacity(0.5)) : Color.clear, lineWidth: 1.5)
+                    .stroke(isSelected ? (issue.isPullRequest ? Color.purple : Color.blue) : Color.clear, lineWidth: 2)
             )
         }
         .buttonStyle(.plain)
