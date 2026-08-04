@@ -233,10 +233,48 @@ public struct QuickSwitcherView: View {
         .onExitCommand {
             closeWindow()
         }
+        .onAppear {
+            setupKeyMonitor()
+        }
+        .onDisappear {
+            removeKeyMonitor()
+        }
         .task {
             if let fetched = try? await GiteaAPIService.shared.fetchAssignedIssues() {
                 self.issues = fetched
             }
+        }
+    }
+
+    @State private var keyMonitor: Any?
+
+    private func setupKeyMonitor() {
+        removeKeyMonitor()
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            let count = filteredList.count
+            guard count > 0 else { return event }
+
+            switch Int(event.keyCode) {
+            case 125: // Down Arrow
+                Task { @MainActor in
+                    self.selectedIndex = min(count - 1, self.selectedIndex + 1)
+                }
+                return nil
+            case 126: // Up Arrow
+                Task { @MainActor in
+                    self.selectedIndex = max(0, self.selectedIndex - 1)
+                }
+                return nil
+            default:
+                return event
+            }
+        }
+    }
+
+    private func removeKeyMonitor() {
+        if let monitor = keyMonitor {
+            NSEvent.removeMonitor(monitor)
+            keyMonitor = nil
         }
     }
 
@@ -249,6 +287,7 @@ public struct QuickSwitcherView: View {
     }
 
     private func closeWindow() {
+        removeKeyMonitor()
         dismiss()
         NSApp.keyWindow?.close()
     }
