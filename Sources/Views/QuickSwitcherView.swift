@@ -255,7 +255,7 @@ public struct QuickSwitcherView: View {
                 .hidden()
                 .frame(width: 0, height: 0)
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 18)
             .padding(.vertical, 8)
             .background(Color.primary.opacity(0.03))
         }
