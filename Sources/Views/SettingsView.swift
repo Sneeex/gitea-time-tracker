@@ -6,6 +6,7 @@ public struct SettingsView: View {
     @ObservedObject var updateChecker = UpdateChecker.shared
     @ObservedObject var gitWatcher = GitWatcherService.shared
     @ObservedObject var globalHotkey = GlobalHotkeyService.shared
+    @ObservedObject var notificationService = NotificationService.shared
 
     @State private var serverURL: String = ""
     @State private var token: String = ""
@@ -260,15 +261,44 @@ public struct SettingsView: View {
                         Toggle("Git-Branch Wechsel automatisch erkennen", isOn: $gitWatcher.isEnabled)
                             .font(.subheadline)
                             .fontWeight(.medium)
+                            .onChange(of: gitWatcher.isEnabled) { _, newValue in
+                                if newValue {
+                                    notificationService.requestAuthorization()
+                                }
+                            }
 
                         Text("Erkennt Branch-Namen mit Issue-Nummer (z.B. `feature/#42-auth`) und bietet per Benachrichtigung 1-Click Zeiterfassung an.")
                             .font(.caption2)
                             .foregroundColor(.secondary)
 
+                        // Notification Status Banner if not authorized
+                        if !notificationService.isAuthorized {
+                            HStack(spacing: 8) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundColor(.orange)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Mitteilungen sind in macOS deaktiviert")
+                                        .font(.caption)
+                                        .fontWeight(.bold)
+                                    Text("Klicke rechts, um Benachrichtigungen in den macOS Systemeinstellungen zu aktivieren.")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                }
+                                Spacer()
+                                Button("Einstellungen öffnen") {
+                                    notificationService.openSystemNotificationSettings()
+                                }
+                                .buttonStyle(.bordered)
+                                .font(.caption2)
+                            }
+                            .padding(8)
+                            .background(RoundedRectangle(cornerRadius: 8).fill(Color.orange.opacity(0.12)))
+                        }
+
                         HStack {
                             Button {
-                                NotificationService.shared.requestAuthorization()
-                                NotificationService.shared.sendTestNotification()
+                                notificationService.requestAuthorization()
+                                notificationService.sendTestNotification()
                             } label: {
                                 Label("Test-Benachrichtigung senden", systemImage: "bell.badge")
                                     .font(.caption)
@@ -437,6 +467,7 @@ public struct SettingsView: View {
             self.serverURL = KeychainService.shared.getServerURL()
             self.token = KeychainService.shared.getToken() ?? ""
             self.isAutostartEnabled = (SMAppService.mainApp.status == .enabled)
+            notificationService.checkAuthorizationStatus()
             Task {
                 self.isFilterOnlyMyRepos = await GiteaAPIService.shared.isFilterOnlyMyReposEnabled()
             }

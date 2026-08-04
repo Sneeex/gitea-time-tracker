@@ -30,6 +30,9 @@ public final class NotificationService: NSObject, ObservableObject, UNUserNotifi
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
             Task { @MainActor in
                 self.isAuthorized = granted
+                if !granted {
+                    self.checkAuthorizationStatus()
+                }
             }
         }
     }
@@ -40,6 +43,12 @@ public final class NotificationService: NSObject, ObservableObject, UNUserNotifi
             Task { @MainActor in
                 self.isAuthorized = (settings.authorizationStatus == .authorized)
             }
+        }
+    }
+
+    public func openSystemNotificationSettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.notifications") {
+            NSWorkspace.shared.open(url)
         }
     }
 
