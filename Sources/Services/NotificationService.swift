@@ -24,6 +24,14 @@ public final class NotificationService: NSObject, ObservableObject, UNUserNotifi
             UNUserNotificationCenter.current().delegate = self
             setupNotificationCategories()
             checkAuthorizationStatus()
+
+            NotificationCenter.default.addObserver(
+                forName: NSApplication.didBecomeActiveNotification,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                self?.checkAuthorizationStatus()
+            }
         }
     }
 
@@ -72,6 +80,21 @@ public final class NotificationService: NSObject, ObservableObject, UNUserNotifi
     }
 
     public func sendTestNotification() {
+        checkAuthorizationStatus()
+
+        guard isAuthorized else {
+            let alert = NSAlert()
+            alert.messageText = "Mitteilungen sind in macOS deaktiviert"
+            alert.informativeText = "Gitea Time Tracker darf derzeit keine Benachrichtigungen senden. Möchtest du die macOS Systemeinstellungen öffnen?"
+            alert.alertStyle = .warning
+            alert.addButton(withTitle: "Einstellungen öffnen")
+            alert.addButton(withTitle: "Abbrechen")
+            if alert.runModal() == .alertFirstButtonReturn {
+                openSystemNotificationSettings()
+            }
+            return
+        }
+
         // 1. Deliver via NSUserNotificationCenter (guaranteed banner delivery on macOS)
         let legacyNotification = NSUserNotification()
         legacyNotification.title = "Test-Benachrichtigung"
@@ -82,21 +105,19 @@ public final class NotificationService: NSObject, ObservableObject, UNUserNotifi
 
         // 2. Deliver via UNUserNotificationCenter if available
         guard isAvailable else { return }
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in
-            let content = UNMutableNotificationContent()
-            content.title = "Test-Benachrichtigung"
-            content.subtitle = "Gitea Time Tracker"
-            content.body = "Benachrichtigungen funktionieren einwandfrei!"
-            content.sound = .default
+        let content = UNMutableNotificationContent()
+        content.title = "Test-Benachrichtigung"
+        content.subtitle = "Gitea Time Tracker"
+        content.body = "Benachrichtigungen funktionieren einwandfrei!"
+        content.sound = .default
 
-            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.1, repeats: false)
-            let request = UNNotificationRequest(
-                identifier: "test_notification_\(Date().timeIntervalSince1970)",
-                content: content,
-                trigger: trigger
-            )
-            UNUserNotificationCenter.current().add(request)
-        }
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 0.1, repeats: false)
+        let request = UNNotificationRequest(
+            identifier: "test_notification_\(Date().timeIntervalSince1970)",
+            content: content,
+            trigger: trigger
+        )
+        UNUserNotificationCenter.current().add(request)
     }
 
     public func sendGitBranchNotification(issue: GiteaIssue, branchName: String) {
