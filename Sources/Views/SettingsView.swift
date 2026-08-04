@@ -17,6 +17,7 @@ public struct SettingsView: View {
     @State private var authenticatedUser: GiteaUser?
 
     @State private var isAutostartEnabled: Bool = false
+    @State private var isFilterOnlyMyRepos: Bool = true
 
     public init() {}
 
@@ -237,6 +238,23 @@ public struct SettingsView: View {
 
                     Divider()
 
+                    // Repository Membership Filter Toggle
+                    VStack(alignment: .leading, spacing: 4) {
+                        Toggle("Nur eigene & Mitglieds-Repositories anzeigen", isOn: $isFilterOnlyMyRepos)
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .onChange(of: isFilterOnlyMyRepos) { _, newValue in
+                                Task {
+                                    await GiteaAPIService.shared.setFilterOnlyMyReposEnabled(newValue)
+                                }
+                            }
+                        Text("Blendet fremde öffentliche Server-Repositories aus. Zeigt nur Projekte an, bei denen du Eigentümer oder Mitglied bist.")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+
+                    Divider()
+
                     // Git Auto-Tracking & Notifications
                     VStack(alignment: .leading, spacing: 8) {
                         Toggle("Git-Branch Wechsel automatisch erkennen", isOn: $gitWatcher.isEnabled)
@@ -419,6 +437,9 @@ public struct SettingsView: View {
             self.serverURL = KeychainService.shared.getServerURL()
             self.token = KeychainService.shared.getToken() ?? ""
             self.isAutostartEnabled = (SMAppService.mainApp.status == .enabled)
+            Task {
+                self.isFilterOnlyMyRepos = await GiteaAPIService.shared.isFilterOnlyMyReposEnabled()
+            }
         }
     }
 

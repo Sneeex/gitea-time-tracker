@@ -181,6 +181,17 @@ public actor GiteaAPIService {
         return decodedIssues
     }
 
+    public func isFilterOnlyMyReposEnabled() -> Bool {
+        if UserDefaults.standard.object(forKey: "gitea_filter_only_my_repos") != nil {
+            return UserDefaults.standard.bool(forKey: "gitea_filter_only_my_repos")
+        }
+        return true
+    }
+
+    public func setFilterOnlyMyReposEnabled(_ enabled: Bool) {
+        UserDefaults.standard.set(enabled, forKey: "gitea_filter_only_my_repos")
+    }
+
     /// Fetches all accessible issues using multi-strategy fallback
     public func fetchAssignedIssues() async throws -> [GiteaIssue] {
         var fetchedIssues: [GiteaIssue] = []
@@ -206,7 +217,23 @@ public actor GiteaAPIService {
             uniqueMap[issue.id] = issue
         }
 
-        return Array(uniqueMap.values).sorted { $0.id > $1.id }
+        var allList = Array(uniqueMap.values).sorted { $0.id > $1.id }
+
+        // Filter out non-member public repos if setting enabled
+        if isFilterOnlyMyReposEnabled() {
+            if let myRepos = try? await fetchUserRepositories() {
+                let myRepoNames = Set(myRepos.compactMap { $0.fullName?.lowercased() ?? $0.name.lowercased() })
+                let myRepoIDs = Set(myRepos.map { $0.id })
+
+                allList = allList.filter { issue in
+                    guard let repo = issue.repository else { return true }
+                    let fullName = (repo.fullName ?? "\(repo.ownerName)/\(repo.name)").lowercased()
+                    return myRepoIDs.contains(repo.id) || myRepoNames.contains(fullName)
+                }
+            }
+        }
+
+        return allList
     }
 
     private func fetchIssuesFromEndpoint(_ endpoint: String) async throws -> [GiteaIssue] {
