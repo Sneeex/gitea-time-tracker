@@ -203,14 +203,13 @@ public struct IssuePickerView: View {
                 Button {
                     Task { await loadIssues() }
                 } label: {
-                    if isLoading {
-                        ProgressView()
-                            .controlSize(.small)
-                    } else {
-                        Image(systemName: "arrow.clockwise")
-                    }
+                    Image(systemName: "arrow.clockwise")
+                        .font(.system(size: 13, weight: .medium))
+                        .rotationEffect(.degrees(isLoading ? 360 : 0))
+                        .animation(isLoading ? .linear(duration: 1.0).repeatForever(autoreverses: false) : .default, value: isLoading)
                 }
                 .buttonStyle(.bordered)
+                .frame(width: 28, height: 28)
                 .disabled(isLoading)
                 .help("Issues neu laden")
             }
