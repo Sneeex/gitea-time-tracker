@@ -247,42 +247,30 @@ public struct IssuePickerView: View {
                 } else if filteredIssues.isEmpty {
                     VStack(spacing: 8) {
                         Spacer()
+                        Image(systemName: "tray")
+                            .font(.system(size: 30))
+                            .foregroundColor(.secondary)
+                        Text("Keine Treffer gefunden")
+                            .font(.callout)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.primary)
+
                         if let suggestion = suggestedCorrection {
-                            Image(systemName: "sparkles")
-                                .font(.system(size: 32))
-                                .foregroundColor(.orange)
-
-                            Text("Keine exakten Treffer für „\(searchText)“")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-
                             Button {
                                 searchText = suggestion
                             } label: {
-                                HStack(spacing: 6) {
-                                    Text("Meintest du vielleicht:")
-                                        .foregroundColor(.primary)
+                                HStack(spacing: 4) {
+                                    Text("Meintest du")
                                     Text("„\(suggestion)“")
-                                        .fontWeight(.bold)
-                                        .foregroundColor(.blue)
-                                    Image(systemName: "arrow.forward.circle.fill")
-                                        .foregroundColor(.blue)
+                                        .fontWeight(.medium)
+                                        .underline()
+                                    Text("?")
                                 }
-                                .font(.callout)
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 8)
-                                .background(Capsule().fill(Color.blue.opacity(0.12)))
+                                .font(.caption)
+                                .foregroundColor(.secondary)
                             }
                             .buttonStyle(.plain)
                         } else {
-                            Image(systemName: "tray")
-                                .font(.system(size: 30))
-                                .foregroundColor(.secondary)
-                            Text("Keine Treffer gefunden")
-                                .font(.callout)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.primary)
-
                             Text(selectedTab == .assigned ? "Dir (@\(currentUsername ?? "user")) sind aktuell keine Issues oder PRs zugewiesen." : "Keine Einträge für den ausgewählten Filter.")
                                 .font(.caption)
                                 .foregroundColor(.secondary)

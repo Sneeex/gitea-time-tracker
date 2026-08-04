@@ -175,40 +175,28 @@ public struct QuickSwitcherView: View {
                 QuickSwitcherSkeletonView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if list.isEmpty {
-                VStack(spacing: 12) {
+                VStack(spacing: 8) {
+                    Image(systemName: "magnifyingglass")
+                        .font(.largeTitle)
+                        .foregroundColor(.secondary)
+                    Text("Keine passenden Issues oder PRs")
+                        .foregroundColor(.secondary)
+
                     if let suggestion = suggestedCorrection {
-                        Image(systemName: "sparkles")
-                            .font(.system(size: 32))
-                            .foregroundColor(.orange)
-
-                        Text("Keine exakten Treffer für „\(searchText)“")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-
                         Button {
                             searchText = suggestion
                         } label: {
-                            HStack(spacing: 6) {
-                                Text("Meintest du vielleicht:")
-                                    .foregroundColor(.primary)
+                            HStack(spacing: 4) {
+                                Text("Meintest du")
                                 Text("„\(suggestion)“")
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.blue)
-                                Image(systemName: "arrow.forward.circle.fill")
-                                    .foregroundColor(.blue)
+                                    .fontWeight(.medium)
+                                    .underline()
+                                Text("?")
                             }
-                            .font(.callout)
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 8)
-                            .background(Capsule().fill(Color.blue.opacity(0.12)))
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                         }
                         .buttonStyle(.plain)
-                    } else {
-                        Image(systemName: "magnifyingglass")
-                            .font(.largeTitle)
-                            .foregroundColor(.secondary)
-                        Text("Keine passenden Issues oder PRs")
-                            .foregroundColor(.secondary)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
