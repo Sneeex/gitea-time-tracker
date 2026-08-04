@@ -243,12 +243,12 @@ public struct IssuePickerView: View {
 
             // MARK: - Issues List Container (Stable Non-Flashing Layout)
             ZStack {
-                if filteredIssues.isEmpty {
+                if isLoading && issues.isEmpty {
+                    IssuePickerSkeletonView()
+                } else if filteredIssues.isEmpty {
                     VStack(spacing: 8) {
                         Spacer()
-                        if isLoading {
-                            IssuePickerSkeletonView()
-                        } else if let suggestion = suggestedCorrection {
+                        if let suggestion = suggestedCorrection {
                             Image(systemName: "sparkles")
                                 .font(.system(size: 32))
                                 .foregroundColor(.orange)
