@@ -516,13 +516,13 @@ struct IssueCardView: View {
 struct IssuePickerSkeletonView: View {
     var body: some View {
         ScrollView {
-            VStack(spacing: 8) {
+            LazyVStack(spacing: 8) {
                 ForEach(0..<3, id: \.self) { _ in
-                    VStack(alignment: .leading, spacing: 10) {
-                        HStack {
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.primary.opacity(0.08))
-                                .frame(width: 60, height: 20)
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 8) {
+                            Capsule()
+                                .fill(Color.primary.opacity(0.1))
+                                .frame(width: 58, height: 22)
 
                             RoundedRectangle(cornerRadius: 4)
                                 .fill(Color.primary.opacity(0.06))
@@ -530,18 +530,15 @@ struct IssuePickerSkeletonView: View {
 
                             Spacer()
 
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.primary.opacity(0.1))
-                                .frame(width: 60, height: 22)
+                            Capsule()
+                                .fill(Color.primary.opacity(0.12))
+                                .frame(width: 62, height: 22)
                         }
 
                         RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.primary.opacity(0.1))
+                            .fill(Color.primary.opacity(0.12))
                             .frame(height: 16)
-
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.primary.opacity(0.08))
-                            .frame(width: 200, height: 14)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .padding(12)
                     .background(
@@ -551,7 +548,7 @@ struct IssuePickerSkeletonView: View {
                 }
             }
             .padding(.vertical, 4)
-            .shimmering()
         }
+        .shimmering()
     }
 }

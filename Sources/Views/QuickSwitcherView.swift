@@ -483,41 +483,43 @@ extension View {
 
 struct QuickSwitcherSkeletonView: View {
     var body: some View {
-        VStack(spacing: 4) {
-            ForEach(0..<4, id: \.self) { _ in
-                HStack(spacing: 10) {
-                    // Badge placeholder
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.primary.opacity(0.08))
-                        .frame(width: 54, height: 20)
-
-                    // Title & Subtitle placeholders
-                    VStack(alignment: .leading, spacing: 6) {
-                        RoundedRectangle(cornerRadius: 4)
+        ScrollView {
+            LazyVStack(spacing: 4) {
+                ForEach(0..<4, id: \.self) { _ in
+                    HStack(spacing: 10) {
+                        // Badge placeholder
+                        Capsule()
                             .fill(Color.primary.opacity(0.1))
-                            .frame(height: 14)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .frame(width: 56, height: 22)
 
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.primary.opacity(0.06))
-                            .frame(width: 90, height: 10)
+                        // Title & Subtitle placeholders
+                        VStack(alignment: .leading, spacing: 4) {
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(Color.primary.opacity(0.12))
+                                .frame(height: 15)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(Color.primary.opacity(0.06))
+                                .frame(width: 80, height: 10)
+                        }
+
+                        Spacer()
+
+                        // Button placeholder
+                        Circle()
+                            .fill(Color.primary.opacity(0.1))
+                            .frame(width: 20, height: 20)
                     }
-
-                    Spacer()
-
-                    // Button placeholder
-                    Circle()
-                        .fill(Color.primary.opacity(0.08))
-                        .frame(width: 24, height: 24)
+                    .padding(10)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.primary.opacity(0.04))
+                    )
                 }
-                .padding(10)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.primary.opacity(0.03))
-                )
             }
+            .padding(8)
         }
-        .padding(8)
         .shimmering()
     }
 }
