@@ -2,6 +2,11 @@
 
 All notable changes to **Gitea Time Tracker** will be documented in this file.
 
+## [1.0.16] - 2026-08-26
+
+### 🐛 Fixed
+- **Quick Switcher Overlay Robustness**: Completely overhauled the Quick Switcher window architecture. It now uses a dedicated `NSPanel` rather than a standard SwiftUI `Window`, which guarantees it successfully renders on top of all macOS fullscreen applications and spaces.
+
 ## [1.0.15] - 2026-08-26
 
 ### 🐛 Fixed

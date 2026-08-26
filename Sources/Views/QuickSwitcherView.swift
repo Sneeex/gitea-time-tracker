@@ -279,15 +279,11 @@ public struct QuickSwitcherView: View {
         }
         .onAppear {
             selectedIndex = 0
-            configureWindowLevel()
         }
         .onDisappear {
         }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)) { notification in
-            if let window = notification.object as? NSWindow,
-               window.identifier?.rawValue == "quick-switcher" || window.title == "Gitea Quick Switcher" {
-                closeWindow()
-            }
+            // Handled by QuickSwitcherManager delegate now
         }
         .task {
             isLoading = issues.isEmpty
@@ -329,47 +325,8 @@ public struct QuickSwitcherView: View {
         closeWindow()
     }
 
-    private func configureWindowLevel() {
-        DispatchQueue.main.async {
-            if let window = NSApp.keyWindow ?? NSApp.windows.first(where: { $0.identifier?.rawValue == "quick-switcher" || $0.title == "Gitea Quick Switcher" }) {
-                window.level = .screenSaver
-                window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-                window.styleMask.insert(.fullSizeContentView)
-                window.standardWindowButton(.closeButton)?.isHidden = true
-                window.standardWindowButton(.miniaturizeButton)?.isHidden = true
-                window.standardWindowButton(.zoomButton)?.isHidden = true
-                window.titlebarAppearsTransparent = true
-                window.titleVisibility = .hidden
-                window.isMovableByWindowBackground = true
-                updateWindowSize()
-                centerWindowOnScreen()
-            }
-        }
-    }
-
     private func updateWindowSize() {
-        DispatchQueue.main.async {
-            if let window = NSApp.windows.first(where: { $0.identifier?.rawValue == "quick-switcher" || $0.title == "Gitea Quick Switcher" }) {
-                let targetHeight: CGFloat = timerService.activeIssue != nil ? 410 : 330
-                window.setContentSize(NSSize(width: 520, height: targetHeight))
-                centerWindowOnScreen()
-            }
-        }
-    }
-
-    private func centerWindowOnScreen() {
-        DispatchQueue.main.async {
-            if let window = NSApp.windows.first(where: { $0.identifier?.rawValue == "quick-switcher" || $0.title == "Gitea Quick Switcher" }) {
-                let screen = NSScreen.main ?? window.screen ?? NSScreen.screens.first
-                if let screen = screen {
-                    let screenFrame = screen.visibleFrame
-                    let windowSize = window.frame.size
-                    let x = screenFrame.minX + (screenFrame.width - windowSize.width) / 2
-                    let y = screenFrame.minY + (screenFrame.height - windowSize.height) * 0.65
-                    window.setFrameOrigin(NSPoint(x: x, y: y))
-                }
-            }
-        }
+        QuickSwitcherManager.shared.updateSize()
     }
 
     private var suggestedCorrection: String? {
@@ -422,8 +379,7 @@ public struct QuickSwitcherView: View {
     }
 
     private func closeWindow() {
-        dismiss()
-        NSApp.keyWindow?.close()
+        QuickSwitcherManager.shared.hide()
     }
 }
 
