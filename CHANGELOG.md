@@ -2,6 +2,11 @@
 
 All notable changes to **Gitea Time Tracker** will be documented in this file.
 
+## [1.0.17] - 2026-08-26
+
+### 🐛 Fixed
+- **Build Error**: Fixed a syntax error introduced in v1.0.16 that caused the CI build to fail.
+
 ## [1.0.16] - 2026-08-26
 
 ### 🐛 Fixed

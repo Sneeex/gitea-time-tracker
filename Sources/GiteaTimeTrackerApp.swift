@@ -42,6 +42,7 @@ struct GiteaTimeTrackerApp: App {
             }
         }
         .menuBarExtraStyle(.window)
+    }
 
     private func setupHotkeyHandler() {
         GlobalHotkeyService.shared.setup {
