@@ -123,7 +123,7 @@ public struct QuickSwitcherView: View {
 
                         // Discard / Stop Button
                         Button {
-                            timerService.stop()
+                            timerService.dismissActiveIssue()
                         } label: {
                             Image(systemName: "trash")
                                 .foregroundColor(.red)
@@ -332,7 +332,7 @@ public struct QuickSwitcherView: View {
     private func configureWindowLevel() {
         DispatchQueue.main.async {
             if let window = NSApp.keyWindow ?? NSApp.windows.first(where: { $0.identifier?.rawValue == "quick-switcher" || $0.title == "Gitea Quick Switcher" }) {
-                window.level = .popUpMenu
+                window.level = .screenSaver
                 window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
                 window.styleMask.insert(.fullSizeContentView)
                 window.standardWindowButton(.closeButton)?.isHidden = true

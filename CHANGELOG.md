@@ -2,6 +2,12 @@
 
 All notable changes to **Gitea Time Tracker** will be documented in this file.
 
+## [1.0.15] - 2026-08-26
+
+### 🐛 Fixed
+- **Quick Switcher Full-Screen Support**: Elevated the Quick Switcher window level even higher (`.screenSaver`) to guarantee it appears on top of all macOS full-screen applications.
+- **Quick Switcher Active Issue**: Clicking the trash icon in the Quick Switcher now correctly dismisses the active issue and hides the timer header.
+
 ## [1.0.14] - 2026-08-26
 
 ### 🐛 Fixed

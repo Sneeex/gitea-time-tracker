@@ -63,7 +63,7 @@ struct GiteaTimeTrackerApp: App {
             } else {
                 NSApp.activate(ignoringOtherApps: true)
                 if let window = NSApp.windows.first(where: { $0.identifier?.rawValue == "quick-switcher" || $0.title == "Gitea Quick Switcher" }) {
-                    window.level = .popUpMenu
+                    window.level = .screenSaver
                     window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
                     window.styleMask.insert(.fullSizeContentView)
                     window.standardWindowButton(.closeButton)?.isHidden = true
