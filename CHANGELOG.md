@@ -2,6 +2,13 @@
 
 All notable changes to **Gitea Time Tracker** will be documented in this file.
 
+## [1.0.14] - 2026-08-26
+
+### 🐛 Fixed
+- **Quick Switcher Full-Screen Support**: The Quick Switcher window now correctly appears on top of full-screen applications by adopting the `.popUpMenu` window level.
+- **Quick Switcher Keyboard Navigation**: Fixed an issue where up and down arrow key navigation didn't work. It now uses native SwiftUI keyboard shortcuts.
+- **Quick Switcher Sorting**: The list of assigned issues now automatically prioritizes the most recently tracked issues at the very top, followed by the rest sorted by ID, making it much more logical to select recent work.
+
 ## [1.0.13] - 2026-08-05
 
 ### 🎨 Style & UI

@@ -255,6 +255,14 @@ public struct QuickSwitcherView: View {
                         .keyboardShortcut(.cancelAction)
                     Button("") { selectCurrentIndex() }
                         .keyboardShortcut(.defaultAction)
+                    Button("") {
+                        selectedIndex = max(0, selectedIndex - 1)
+                    }
+                    .keyboardShortcut(.upArrow, modifiers: [])
+                    Button("") {
+                        selectedIndex = min(filteredList.count - 1, selectedIndex + 1)
+                    }
+                    .keyboardShortcut(.downArrow, modifiers: [])
                 }
                 .hidden()
             )
@@ -271,11 +279,9 @@ public struct QuickSwitcherView: View {
         }
         .onAppear {
             selectedIndex = 0
-            setupKeyMonitor()
             configureWindowLevel()
         }
         .onDisappear {
-            removeKeyMonitor()
         }
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)) { notification in
             if let window = notification.object as? NSWindow,
@@ -286,39 +292,34 @@ public struct QuickSwitcherView: View {
         .task {
             isLoading = issues.isEmpty
             if let fetched = try? await GiteaAPIService.shared.fetchAssignedIssues() {
-                self.issues = fetched
+                var allIssues = fetched
+                for recent in TimerService.shared.recentIssues.reversed() {
+                    if !allIssues.contains(where: { $0.id == recent.id }) {
+                        allIssues.insert(recent, at: 0)
+                    }
+                }
+                
+                let recentIDs = TimerService.shared.recentIssues.map { $0.id }
+                self.issues = allIssues.sorted { a, b in
+                    let indexA = recentIDs.firstIndex(of: a.id)
+                    let indexB = recentIDs.firstIndex(of: b.id)
+                    
+                    if let aIdx = indexA, let bIdx = indexB {
+                        return aIdx < bIdx
+                    } else if indexA != nil {
+                        return true
+                    } else if indexB != nil {
+                        return false
+                    } else {
+                        return a.id > b.id
+                    }
+                }
             }
             isLoading = false
         }
     }
 
-    @State private var keyMonitor: Any?
 
-    private func setupKeyMonitor() {
-        removeKeyMonitor()
-        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            let count = filteredList.count
-            guard count > 0 else { return event }
-
-            switch Int(event.keyCode) {
-            case 125: // Down Arrow
-                self.selectedIndex = min(count - 1, self.selectedIndex + 1)
-                return nil
-            case 126: // Up Arrow
-                self.selectedIndex = max(0, self.selectedIndex - 1)
-                return nil
-            default:
-                return event
-            }
-        }
-    }
-
-    private func removeKeyMonitor() {
-        if let monitor = keyMonitor {
-            NSEvent.removeMonitor(monitor)
-            keyMonitor = nil
-        }
-    }
 
     private func selectCurrentIndex() {
         let list = filteredList
@@ -331,7 +332,7 @@ public struct QuickSwitcherView: View {
     private func configureWindowLevel() {
         DispatchQueue.main.async {
             if let window = NSApp.keyWindow ?? NSApp.windows.first(where: { $0.identifier?.rawValue == "quick-switcher" || $0.title == "Gitea Quick Switcher" }) {
-                window.level = .floating
+                window.level = .popUpMenu
                 window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
                 window.styleMask.insert(.fullSizeContentView)
                 window.standardWindowButton(.closeButton)?.isHidden = true
@@ -421,7 +422,6 @@ public struct QuickSwitcherView: View {
     }
 
     private func closeWindow() {
-        removeKeyMonitor()
         dismiss()
         NSApp.keyWindow?.close()
     }
