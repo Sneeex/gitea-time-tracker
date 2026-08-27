@@ -125,14 +125,14 @@ public actor GiteaAPIService {
         var allRepos: [GiteaRepository] = []
 
         // 1. Personal Repos: /api/v1/user/repos
-        if let userRepos = try? await fetchReposFromEndpoint("user/repos?limit=100") {
+        if let userRepos = try? await fetchReposFromEndpoint("user/repos?limit=50") {
             allRepos.append(contentsOf: userRepos)
         }
 
         // 2. User Orgs: /api/v1/user/orgs -> /api/v1/orgs/{org}/repos
         if let orgs = try? await fetchOrgsFromEndpoint("user/orgs") {
             for org in orgs {
-                let endpoint = "orgs/\(org.username)/repos?limit=100"
+                let endpoint = "orgs/\(org.username)/repos?limit=50"
                 if let orgRepos = try? await fetchReposFromEndpoint(endpoint) {
                     allRepos.append(contentsOf: orgRepos)
                 }
@@ -149,36 +149,54 @@ public actor GiteaAPIService {
 
     /// Fetches open issues for a specific repository (e.g. owner: "liquid-development", repo: "tallee-app")
     public func fetchRepoIssues(owner: String, repo: String) async throws -> [GiteaIssue] {
-        let endpoint = "repos/\(owner)/\(repo)/issues?state=open&limit=100"
-        let request = try makeRequest(endpoint: endpoint)
-        let (data, response) = try await session.data(for: request)
+        var allIssues: [GiteaIssue] = []
+        var page = 1
+        
+        while true {
+            let endpoint = "repos/\(owner)/\(repo)/issues?state=open&limit=50&page=\(page)"
+            let request = try makeRequest(endpoint: endpoint)
+            let (data, response) = try await session.data(for: request)
 
-        guard let httpStatus = response as? HTTPURLResponse else {
-            throw GiteaAPIError.networkError("Keine Server-Antwort.")
-        }
+            guard let httpStatus = response as? HTTPURLResponse else {
+                throw GiteaAPIError.networkError("Keine Server-Antwort.")
+            }
 
-        if httpStatus.statusCode != 200 {
-            let serverMsg = parseErrorMessage(from: data)
-            throw GiteaAPIError.serverError(statusCode: httpStatus.statusCode, message: serverMsg)
-        }
+            if httpStatus.statusCode != 200 {
+                let serverMsg = parseErrorMessage(from: data)
+                throw GiteaAPIError.serverError(statusCode: httpStatus.statusCode, message: serverMsg)
+            }
 
-        var decodedIssues = try makeDecoder().decode([GiteaIssue].self, from: data)
+            var decodedIssues = try makeDecoder().decode([GiteaIssue].self, from: data)
+            if decodedIssues.isEmpty {
+                break
+            }
 
-        // Ensure repo information is set on each issue
-        let fallbackRepo = GiteaRepository(
-            id: 0,
-            name: repo,
-            fullName: "\(owner)/\(repo)",
-            owner: GiteaUser(id: 0, username: owner)
-        )
+            // Ensure repo information is set on each issue
+            let fallbackRepo = GiteaRepository(
+                id: 0,
+                name: repo,
+                fullName: "\(owner)/\(repo)",
+                owner: GiteaUser(id: 0, username: owner)
+            )
 
-        for i in 0..<decodedIssues.count {
-            if decodedIssues[i].repository == nil {
-                decodedIssues[i].repository = fallbackRepo
+            for i in 0..<decodedIssues.count {
+                if decodedIssues[i].repository == nil {
+                    decodedIssues[i].repository = fallbackRepo
+                }
+            }
+            
+            allIssues.append(contentsOf: decodedIssues)
+            
+            if decodedIssues.count < 50 {
+                break
+            }
+            page += 1
+            if page > 20 { // max 1000 items
+                break
             }
         }
 
-        return decodedIssues
+        return allIssues
     }
 
     public func isFilterOnlyMyReposEnabled() -> Bool {
@@ -196,18 +214,18 @@ public actor GiteaAPIService {
     public func fetchAssignedIssues() async throws -> [GiteaIssue] {
         var fetchedIssues: [GiteaIssue] = []
 
-        // Strategy 1: GET /api/v1/issues?state=open&limit=100
-        if let globalIssues = try? await fetchIssuesFromEndpoint("issues?state=open&limit=100") {
+        // Strategy 1: GET /api/v1/issues?state=open&limit=50&type=all
+        if let globalIssues = try? await fetchIssuesFromEndpoint("issues?state=open&limit=50&type=all") {
             fetchedIssues.append(contentsOf: globalIssues)
         }
 
-        // Strategy 2: GET /api/v1/user/issues?state=open&limit=100
-        if let userIssues = try? await fetchIssuesFromEndpoint("user/issues?state=open&limit=100") {
+        // Strategy 2: GET /api/v1/user/issues?state=open&limit=50&type=all
+        if let userIssues = try? await fetchIssuesFromEndpoint("user/issues?state=open&limit=50&type=all") {
             fetchedIssues.append(contentsOf: userIssues)
         }
 
-        // Strategy 3: GET /api/v1/repos/issues/search?state=open&limit=100
-        if let searchIssues = try? await fetchIssuesFromEndpoint("repos/issues/search?state=open&limit=100") {
+        // Strategy 3: GET /api/v1/repos/issues/search?state=open&limit=50&type=all
+        if let searchIssues = try? await fetchIssuesFromEndpoint("repos/issues/search?state=open&limit=50&type=all") {
             fetchedIssues.append(contentsOf: searchIssues)
         }
 
@@ -237,30 +255,79 @@ public actor GiteaAPIService {
     }
 
     private func fetchIssuesFromEndpoint(_ endpoint: String) async throws -> [GiteaIssue] {
-        let request = try makeRequest(endpoint: endpoint)
-        let (data, response) = try await session.data(for: request)
-
-        guard let httpStatus = response as? HTTPURLResponse, httpStatus.statusCode == 200 else {
-            return []
+        var allIssues: [GiteaIssue] = []
+        var page = 1
+        
+        while true {
+            let sep = endpoint.contains("?") ? "&" : "?"
+            let pagedEndpoint = "\(endpoint)\(sep)page=\(page)"
+            
+            let request = try makeRequest(endpoint: pagedEndpoint)
+            let (data, response) = try await session.data(for: request)
+            
+            guard let httpStatus = response as? HTTPURLResponse, httpStatus.statusCode == 200 else {
+                break
+            }
+            
+            do {
+                let issues = try makeDecoder().decode([GiteaIssue].self, from: data)
+                if issues.isEmpty {
+                    break
+                }
+                allIssues.append(contentsOf: issues)
+                
+                if issues.count < 50 {
+                    break
+                }
+                page += 1
+                
+                if page > 20 { // Safety limit: max 20 pages
+                    break
+                }
+            } catch {
+                print("Failed to decode issues from \(pagedEndpoint): \(error)")
+                break
+            }
         }
-
-        do {
-            return try makeDecoder().decode([GiteaIssue].self, from: data)
-        } catch {
-            print("Failed to decode issues from \(endpoint): \(error)")
-            return []
-        }
+        return allIssues
     }
 
     private func fetchReposFromEndpoint(_ endpoint: String) async throws -> [GiteaRepository] {
-        let request = try makeRequest(endpoint: endpoint)
-        let (data, response) = try await session.data(for: request)
-
-        guard let httpStatus = response as? HTTPURLResponse, httpStatus.statusCode == 200 else {
-            return []
+        var allRepos: [GiteaRepository] = []
+        var page = 1
+        
+        while true {
+            let sep = endpoint.contains("?") ? "&" : "?"
+            let pagedEndpoint = "\(endpoint)\(sep)page=\(page)"
+            
+            let request = try makeRequest(endpoint: pagedEndpoint)
+            let (data, response) = try await session.data(for: request)
+            
+            guard let httpStatus = response as? HTTPURLResponse, httpStatus.statusCode == 200 else {
+                break
+            }
+            
+            do {
+                let repos = try makeDecoder().decode([GiteaRepository].self, from: data)
+                if repos.isEmpty {
+                    break
+                }
+                allRepos.append(contentsOf: repos)
+                
+                if repos.count < 50 {
+                    break
+                }
+                page += 1
+                
+                if page > 20 { // Safety limit: max 20 pages
+                    break
+                }
+            } catch {
+                print("Failed to decode repos from \(pagedEndpoint): \(error)")
+                break
+            }
         }
-
-        return try makeDecoder().decode([GiteaRepository].self, from: data)
+        return allRepos
     }
 
     private func fetchOrgsFromEndpoint(_ endpoint: String) async throws -> [GiteaUser] {

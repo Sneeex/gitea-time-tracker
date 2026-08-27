@@ -10,6 +10,10 @@ public struct QuickSwitcherView: View {
     @State private var isLoading: Bool = true
     @State private var selectedIndex: Int = 0
 
+    @AppStorage("gitea_selected_repo_fullname") private var selectedRepoFullName: String = "ALL_REPOS"
+    @AppStorage("gitea_selected_type_filter") private var typeFilterRaw: String = "Alle Typen" // IssueTypeFilter.all
+    @AppStorage("sync_quick_switcher_filters") private var syncFilters: Bool = true
+
     public init() {}
 
     private var filteredList: [GiteaIssue] {
@@ -20,6 +24,18 @@ public struct QuickSwitcherView: View {
 
         let query = searchText.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
         for item in source {
+            if syncFilters {
+                if typeFilterRaw == "Nur Issues" && item.isPullRequest { continue }
+                if typeFilterRaw == "Nur PRs" && !item.isPullRequest { continue }
+                
+                if selectedRepoFullName != "ALL_REPOS" {
+                    let itemFullName = item.repository?.fullName ?? "\(item.repoOwnerName)/\(item.repoName)"
+                    if itemFullName.lowercased() != selectedRepoFullName.lowercased() {
+                        continue
+                    }
+                }
+            }
+
             if !seenIDs.contains(item.id) {
                 if query.isEmpty ||
                    item.title.lowercased().contains(query) ||
@@ -287,8 +303,27 @@ public struct QuickSwitcherView: View {
         }
         .task {
             isLoading = issues.isEmpty
-            if let fetched = try? await GiteaAPIService.shared.fetchAssignedIssues() {
-                var allIssues = fetched
+            
+            var fetched: [GiteaIssue]? = nil
+            do {
+                if syncFilters && selectedRepoFullName != "ALL_REPOS" {
+                    let parts = selectedRepoFullName.split(separator: "/")
+                    if parts.count == 2 {
+                        let owner = String(parts[0])
+                        let repo = String(parts[1])
+                        fetched = try await GiteaAPIService.shared.fetchRepoIssues(owner: owner, repo: repo)
+                    } else {
+                        fetched = try await GiteaAPIService.shared.fetchAssignedIssues()
+                    }
+                } else {
+                    fetched = try await GiteaAPIService.shared.fetchAssignedIssues()
+                }
+            } catch {
+                print("Failed to fetch issues for QuickSwitcher: \(error)")
+            }
+
+            if let fetchedIssues = fetched {
+                var allIssues = fetchedIssues
                 for recent in TimerService.shared.recentIssues.reversed() {
                     if !allIssues.contains(where: { $0.id == recent.id }) {
                         allIssues.insert(recent, at: 0)

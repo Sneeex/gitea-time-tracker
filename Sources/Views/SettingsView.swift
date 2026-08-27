@@ -19,6 +19,7 @@ public struct SettingsView: View {
 
     @State private var isAutostartEnabled: Bool = false
     @State private var isFilterOnlyMyRepos: Bool = true
+    @AppStorage("sync_quick_switcher_filters") private var syncQuickSwitcherFilters: Bool = true
 
     public init() {}
 
@@ -250,6 +251,17 @@ public struct SettingsView: View {
                                 }
                             }
                         Text("Blendet fremde öffentliche Server-Repositories aus. Zeigt nur Projekte an, bei denen du Eigentümer oder Mitglied bist.")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+
+                    Divider()
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Toggle("Tray-Filter im Quick Switcher verwenden", isOn: $syncQuickSwitcherFilters)
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                        Text("Synchronisiert die Filter (Repository, Issues/PRs), die du im Tray-Menü ausgewählt hast, für den globalen Quick Switcher.")
                             .font(.caption2)
                             .foregroundColor(.secondary)
                     }
