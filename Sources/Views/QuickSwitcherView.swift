@@ -6,8 +6,7 @@ public struct QuickSwitcherView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var searchText: String = ""
-    @State private var issues: [GiteaIssue] = []
-    @State private var isLoading: Bool = true
+    @ObservedObject var issueStore = IssueStore.shared
     @State private var selectedIndex: Int = 0
 
     @AppStorage("gitea_selected_repo_fullname") private var selectedRepoFullName: String = "ALL_REPOS"
@@ -17,7 +16,7 @@ public struct QuickSwitcherView: View {
     public init() {}
 
     private var filteredList: [GiteaIssue] {
-        let source: [GiteaIssue] = issues
+        let source: [GiteaIssue] = issueStore.issues
 
         var result: [GiteaIssue] = []
         var seenIDs = Set<Int>()
@@ -29,9 +28,11 @@ public struct QuickSwitcherView: View {
                 if typeFilterRaw == "Nur PRs" && !item.isPullRequest { continue }
                 
                 if selectedRepoFullName != "ALL_REPOS" {
-                    let itemFullName = item.repository?.fullName ?? "\(item.repoOwnerName)/\(item.repoName)"
-                    if itemFullName.lowercased() != selectedRepoFullName.lowercased() {
-                        continue
+                    if let repo = item.repository {
+                        let itemFullName = repo.fullName ?? "\(repo.ownerName)/\(repo.name)"
+                        if itemFullName.lowercased() != selectedRepoFullName.lowercased() {
+                            continue
+                        }
                     }
                 }
             }
@@ -187,7 +188,7 @@ public struct QuickSwitcherView: View {
 
             // MARK: - List of matching issues
             let list = filteredList
-            if isLoading && issues.isEmpty {
+            if issueStore.isLoading && issueStore.issues.isEmpty {
                 QuickSwitcherSkeletonView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if list.isEmpty {
@@ -301,56 +302,16 @@ public struct QuickSwitcherView: View {
         .onReceive(NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)) { notification in
             // Handled by QuickSwitcherManager delegate now
         }
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("QuickSwitcherDidShow"))) { _ in
+            Task { await issueStore.loadIssues() }
+        }
+        .onChange(of: selectedRepoFullName) { _, _ in
+            Task { await issueStore.loadIssues() }
+        }
         .task {
-            isLoading = issues.isEmpty
-            
-            var fetched: [GiteaIssue]? = nil
-            do {
-                if syncFilters && selectedRepoFullName != "ALL_REPOS" {
-                    let parts = selectedRepoFullName.split(separator: "/")
-                    if parts.count == 2 {
-                        let owner = String(parts[0])
-                        let repo = String(parts[1])
-                        fetched = try await GiteaAPIService.shared.fetchRepoIssues(owner: owner, repo: repo)
-                    } else {
-                        fetched = try await GiteaAPIService.shared.fetchAssignedIssues()
-                    }
-                } else {
-                    fetched = try await GiteaAPIService.shared.fetchAssignedIssues()
-                }
-            } catch {
-                print("Failed to fetch issues for QuickSwitcher: \(error)")
-            }
-
-            if let fetchedIssues = fetched {
-                var allIssues = fetchedIssues
-                for recent in TimerService.shared.recentIssues.reversed() {
-                    if !allIssues.contains(where: { $0.id == recent.id }) {
-                        allIssues.insert(recent, at: 0)
-                    }
-                }
-                
-                let recentIDs = TimerService.shared.recentIssues.map { $0.id }
-                self.issues = allIssues.sorted { a, b in
-                    let indexA = recentIDs.firstIndex(of: a.id)
-                    let indexB = recentIDs.firstIndex(of: b.id)
-                    
-                    if let aIdx = indexA, let bIdx = indexB {
-                        return aIdx < bIdx
-                    } else if indexA != nil {
-                        return true
-                    } else if indexB != nil {
-                        return false
-                    } else {
-                        return a.id > b.id
-                    }
-                }
-            }
-            isLoading = false
+            await issueStore.loadIssues()
         }
     }
-
-
 
     private func selectCurrentIndex() {
         let list = filteredList
@@ -371,7 +332,7 @@ public struct QuickSwitcherView: View {
         var bestWord: String?
         var minDistance = Int.max
 
-        for issue in issues {
+        for issue in issueStore.issues {
             let textToScan = "\(issue.title) \(issue.repoName) \(issue.formattedKey)"
             let words = textToScan.components(separatedBy: CharacterSet.alphanumerics.inverted)
                 .filter { $0.count >= 3 }

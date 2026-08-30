@@ -28,7 +28,8 @@ public enum IssueTypeFilter: String, CaseIterable, Identifiable {
 public struct IssuePickerView: View {
     @ObservedObject var timerService = TimerService.shared
 
-    @State private var repositories: [GiteaRepository] = []
+    @ObservedObject var issueStore = IssueStore.shared
+
     @AppStorage("gitea_selected_repo_fullname") private var selectedRepoFullName: String = "ALL_REPOS"
     @AppStorage("gitea_selected_filter_tab") private var selectedTabRaw: String = IssueFilterTab.all.rawValue
     @AppStorage("gitea_selected_type_filter") private var typeFilterRaw: String = IssueTypeFilter.all.rawValue
@@ -56,15 +57,11 @@ public struct IssuePickerView: View {
     }
 
     @State private var searchText: String = ""
-    @State private var issues: [GiteaIssue] = []
-    @State private var currentUsername: String?
-    @State private var isLoading: Bool = false
-    @State private var errorMessage: String?
 
     public init() {}
 
     public var filteredIssues: [GiteaIssue] {
-        var baseList: [GiteaIssue] = issues
+        var baseList: [GiteaIssue] = issueStore.issues
 
         // 1. Repository Filter
         if selectedRepoFullName != "ALL_REPOS" {
@@ -92,7 +89,7 @@ public struct IssuePickerView: View {
         case .all:
             break
         case .assigned:
-            if let user = currentUsername?.lowercased(), !user.isEmpty {
+            if let user = issueStore.currentUsername?.lowercased(), !user.isEmpty {
                 baseList = baseList.filter { issue in
                     guard let assignee = issue.assignee else { return false }
                     return assignee.username.lowercased() == user
@@ -123,13 +120,13 @@ public struct IssuePickerView: View {
         var repoMap: [String: GiteaRepository] = [:]
 
         // 1. Repos from user repos API
-        for repo in repositories {
+        for repo in issueStore.repositories {
             let key = (repo.fullName ?? "\(repo.ownerName)/\(repo.name)").lowercased()
             repoMap[key] = repo
         }
 
         // 2. Repos from fetched issues (ensures assigned repos like sstk-semesterprojekt appear)
-        for issue in issues {
+        for issue in issueStore.issues {
             if let repo = issue.repository {
                 let key = (repo.fullName ?? "\(repo.ownerName)/\(repo.name)").lowercased()
                 if repoMap[key] == nil {
@@ -163,7 +160,7 @@ public struct IssuePickerView: View {
                 }
                 .pickerStyle(.menu)
                 .onChange(of: selectedRepoFullName) { _, _ in
-                    Task { await loadIssues() }
+                    Task { await issueStore.loadIssues() }
                 }
 
                 Spacer()
@@ -201,16 +198,16 @@ public struct IssuePickerView: View {
                 .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.06)))
 
                 Button {
-                    Task { await loadIssues() }
+                    Task { await issueStore.loadIssues() }
                 } label: {
                     Image(systemName: "arrow.clockwise")
                         .font(.system(size: 13, weight: .medium))
-                        .rotationEffect(.degrees(isLoading ? 360 : 0))
-                        .animation(isLoading ? .linear(duration: 1.0).repeatForever(autoreverses: false) : .default, value: isLoading)
+                        .rotationEffect(.degrees(issueStore.isLoading ? 360 : 0))
+                        .animation(issueStore.isLoading ? .linear(duration: 1.0).repeatForever(autoreverses: false) : .default, value: issueStore.isLoading)
                 }
                 .buttonStyle(.bordered)
                 .frame(width: 28, height: 28)
-                .disabled(isLoading)
+                .disabled(issueStore.isLoading)
                 .help("Issues neu laden")
             }
 
@@ -223,7 +220,7 @@ public struct IssuePickerView: View {
             .pickerStyle(.segmented)
 
             // MARK: - Error Banner
-            if let err = errorMessage {
+            if let err = issueStore.errorMessage {
                 HStack(alignment: .top, spacing: 8) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundColor(.orange)
@@ -242,7 +239,7 @@ public struct IssuePickerView: View {
 
             // MARK: - Issues List Container (Stable Non-Flashing Layout)
             ZStack {
-                if isLoading && issues.isEmpty {
+                if issueStore.isLoading && issueStore.issues.isEmpty {
                     IssuePickerSkeletonView()
                 } else if filteredIssues.isEmpty {
                     VStack(spacing: 8) {
@@ -271,14 +268,14 @@ public struct IssuePickerView: View {
                             }
                             .buttonStyle(.plain)
                         } else {
-                            Text(selectedTab == .assigned ? "Dir (@\(currentUsername ?? "user")) sind aktuell keine Issues oder PRs zugewiesen." : "Keine Einträge für den ausgewählten Filter.")
+                            Text(selectedTab == .assigned ? "Dir (@\(issueStore.currentUsername ?? "user")) sind aktuell keine Issues oder PRs zugewiesen." : "Keine Einträge für den ausgewählten Filter.")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal, 20)
 
                             Button("Issues neu laden") {
-                                Task { await loadIssues() }
+                                Task { await issueStore.loadIssues() }
                             }
                             .buttonStyle(.bordered)
                             .controlSize(.small)
@@ -295,7 +292,7 @@ public struct IssuePickerView: View {
                         }
                         .padding(.vertical, 4)
                     }
-                    .opacity(isLoading ? 0.6 : 1.0)
+                    .opacity(issueStore.isLoading ? 0.6 : 1.0)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -303,46 +300,13 @@ public struct IssuePickerView: View {
         .padding(.horizontal, 12)
         .padding(.top, 8)
         .task {
-            await loadCurrentUser()
-            await loadRepositories()
-            if issues.isEmpty {
-                await loadIssues()
+            
+            await issueStore.loadCurrentUser()
+            await issueStore.loadRepositories()
+            if issueStore.issues.isEmpty {
+                await issueStore.loadIssues()
             }
         }
-    }
-
-    private func loadCurrentUser() async {
-        if let user = await GiteaAPIService.shared.getCurrentUser() {
-            self.currentUsername = user.username
-        }
-    }
-
-    private func loadRepositories() async {
-        if let fetched = try? await GiteaAPIService.shared.fetchUserRepositories() {
-            self.repositories = fetched
-        }
-    }
-
-    private func loadIssues() async {
-        isLoading = true
-        errorMessage = nil
-        do {
-            if selectedRepoFullName != "ALL_REPOS" {
-                let parts = selectedRepoFullName.split(separator: "/")
-                if parts.count == 2 {
-                    let owner = String(parts[0])
-                    let repo = String(parts[1])
-                    self.issues = try await GiteaAPIService.shared.fetchRepoIssues(owner: owner, repo: repo)
-                } else {
-                    self.issues = try await GiteaAPIService.shared.fetchAssignedIssues()
-                }
-            } else {
-                self.issues = try await GiteaAPIService.shared.fetchAssignedIssues()
-            }
-        } catch {
-            self.errorMessage = error.localizedDescription
-        }
-        isLoading = false
     }
 
     private var suggestedCorrection: String? {
@@ -352,7 +316,7 @@ public struct IssuePickerView: View {
         var bestWord: String?
         var minDistance = Int.max
 
-        for issue in issues {
+        for issue in issueStore.issues {
             let textToScan = "\(issue.title) \(issue.repoName) \(issue.formattedKey)"
             let words = textToScan.components(separatedBy: CharacterSet.alphanumerics.inverted)
                 .filter { $0.count >= 3 }

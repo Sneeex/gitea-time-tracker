@@ -65,6 +65,7 @@ public class QuickSwitcherManager: NSObject, NSWindowDelegate {
         
         p.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+        NotificationCenter.default.post(name: NSNotification.Name("QuickSwitcherDidShow"), object: nil)
     }
     
     public func hide() {
