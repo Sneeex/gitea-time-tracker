@@ -2,6 +2,14 @@
 
 All notable changes to **Gitea Time Tracker** will be documented in this file.
 
+## [1.0.18] - 2026-08-30
+
+### 🐛 Fixed
+- **Quick Switcher Sync**: Resolved an issue where Quick Switcher issues were not synchronized with the Taskbar app (Issue #359).
+
+### ♻️ Refactored
+- **Data Provider**: Extracted issue data handling into a central `IssueStore` (Single Source of Truth) to prevent state discrepancies.
+
 ## [1.0.17] - 2026-08-26
 
 ### 🐛 Fixed
