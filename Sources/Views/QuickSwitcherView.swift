@@ -194,7 +194,7 @@ public struct QuickSwitcherView: View {
                         )
                 }
                 .buttonStyle(.plain)
-                .help("Menüleisten-Menü öffnen (⌥M)")
+                .help("Menüleisten-Menü öffnen (⌘M)")
             }
             .padding(12)
             .background(Color.primary.opacity(0.03))
@@ -279,7 +279,7 @@ public struct QuickSwitcherView: View {
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "menubar.arrow.up.rectangle")
-                        Text("Menüleiste")
+                        Text("Menüleiste (⌘M)")
                     }
                     .font(.caption2)
                     .foregroundColor(.secondary)
@@ -291,7 +291,7 @@ public struct QuickSwitcherView: View {
                     )
                 }
                 .buttonStyle(.plain)
-                .help("Hauptmenü in der Menüleiste öffnen (⌥M)")
+                .help("Hauptmenü in der Menüleiste öffnen (⌘M)")
 
                 Spacer()
 
@@ -316,6 +316,10 @@ public struct QuickSwitcherView: View {
                         selectedIndex = min(filteredList.count - 1, selectedIndex + 1)
                     }
                     .keyboardShortcut(.downArrow, modifiers: [])
+                    Button("") {
+                        MenuBarManager.shared.showAppTrayMenu()
+                    }
+                    .keyboardShortcut("m", modifiers: [.command])
                     Button("") {
                         MenuBarManager.shared.showAppTrayMenu()
                     }
