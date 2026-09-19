@@ -2,6 +2,11 @@
 
 All notable changes to **Gitea Time Tracker** will be documented in this file.
 
+## [1.0.19] - 2026-09-19
+
+### ✨ Added
+- **Open App Tray from Quick Switcher**: Added dedicated buttons in the Quick Switcher search header and footer, as well as an `⌥M` keyboard shortcut, to seamlessly dismiss the Quick Switcher and open the menu bar app tray popup.
+
 ## [1.0.18] - 2026-08-30
 
 ### 🐛 Fixed

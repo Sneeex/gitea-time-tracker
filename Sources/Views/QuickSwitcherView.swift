@@ -180,6 +180,21 @@ public struct QuickSwitcherView: View {
                     }
                     .buttonStyle(.plain)
                 }
+
+                Button {
+                    MenuBarManager.shared.showAppTrayMenu()
+                } label: {
+                    Image(systemName: "menubar.arrow.up.rectangle")
+                        .font(.system(size: 14))
+                        .foregroundColor(.secondary)
+                        .padding(5)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(Color.primary.opacity(0.06))
+                        )
+                }
+                .buttonStyle(.plain)
+                .help("Menüleisten-Menü öffnen (⌥M)")
             }
             .padding(12)
             .background(Color.primary.opacity(0.03))
@@ -259,6 +274,27 @@ public struct QuickSwitcherView: View {
 
                 Spacer()
 
+                Button {
+                    MenuBarManager.shared.showAppTrayMenu()
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "menubar.arrow.up.rectangle")
+                        Text("Menüleiste")
+                    }
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.primary.opacity(0.05))
+                    )
+                }
+                .buttonStyle(.plain)
+                .help("Hauptmenü in der Menüleiste öffnen (⌥M)")
+
+                Spacer()
+
                 Text("Esc Schließen")
                     .font(.caption2)
                     .foregroundColor(.secondary)
@@ -280,6 +316,10 @@ public struct QuickSwitcherView: View {
                         selectedIndex = min(filteredList.count - 1, selectedIndex + 1)
                     }
                     .keyboardShortcut(.downArrow, modifiers: [])
+                    Button("") {
+                        MenuBarManager.shared.showAppTrayMenu()
+                    }
+                    .keyboardShortcut("m", modifiers: [.option])
                 }
                 .hidden()
             )

@@ -37,6 +37,7 @@ struct GiteaTimeTrackerApp: App {
                         .font(.monospacedDigit(.callout)())
                 }
             }
+            .background(StatusItemAccessor())
             .onAppear {
                 setupHotkeyHandler()
             }
