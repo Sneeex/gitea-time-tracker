@@ -274,27 +274,6 @@ public struct QuickSwitcherView: View {
 
                 Spacer()
 
-                Button {
-                    MenuBarManager.shared.showAppTrayMenu()
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "menubar.arrow.up.rectangle")
-                        Text("Menüleiste (⌘M)")
-                    }
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color.primary.opacity(0.05))
-                    )
-                }
-                .buttonStyle(.plain)
-                .help("Hauptmenü in der Menüleiste öffnen (⌘M)")
-
-                Spacer()
-
                 Text("Esc Schließen")
                     .font(.caption2)
                     .foregroundColor(.secondary)
