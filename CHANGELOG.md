@@ -2,6 +2,15 @@
 
 All notable changes to **Gitea Time Tracker** will be documented in this file.
 
+## [1.0.20] - 2026-09-19
+
+### ✨ Added & Improved
+- **Command+M Shortcut**: Added `⌘M` (`Command + M`) keyboard shortcut in the Quick Switcher alongside `⌥M` to open the app tray menu seamlessly even while typing in the search bar.
+- **Clean Quick Switcher Footer**: Removed the menu button from the footer bar to keep the footer clean and focused on keyboard navigation hints.
+
+### 🐛 Fixed
+- **Update Checker Safety**: Hardened `UpdateChecker` by using `NSApplication.shared.activate` to prevent potential nil unwrapping in headless or background contexts.
+
 ## [1.0.19] - 2026-09-19
 
 ### ✨ Added

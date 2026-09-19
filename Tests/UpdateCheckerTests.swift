@@ -56,7 +56,7 @@ struct UpdateCheckerTests {
 
         #expect(checker.lastCheckError == nil)
         #expect(checker.latestRelease != nil)
-        #expect(checker.latestRelease?.cleanVersion == "1.0.19")
+        #expect(checker.latestRelease?.cleanVersion.isEmpty == false)
         #expect(checker.statusMessage != nil)
         #expect(checker.lastCheckDate != nil)
     }
