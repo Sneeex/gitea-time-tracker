@@ -80,7 +80,7 @@ public final class UpdateChecker: ObservableObject {
     }
 
     public var currentVersion: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.10"
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.19"
     }
 
     private let repositoryOwner = "Sneeex"
@@ -143,7 +143,7 @@ public final class UpdateChecker: ObservableObject {
                 self.isUpdateAvailable = true
                 self.showUpdatePopup = true
                 self.statusMessage = "Neue Version \(release.cleanVersion) verfügbar!"
-                NSApp.activate(ignoringOtherApps: true)
+                NSApplication.shared.activate(ignoringOtherApps: true)
             } else {
                 self.isUpdateAvailable = false
                 self.showUpdatePopup = false
